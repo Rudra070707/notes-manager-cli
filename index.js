@@ -1,34 +1,17 @@
-const fs = require("fs");
+const notes = require("./notes");
 
-// Get command-line arguments
 const args = process.argv.slice(2);
 
 const command = args[0];
 const note = args[1];
 
-// Read notes
-const data = fs.readFileSync("./notes/notes.json", "utf8");
-const notes = JSON.parse(data);
-
 switch (command) {
   case "add":
-    notes.push(note);
-
-    fs.writeFileSync(
-      "./notes/notes.json",
-      JSON.stringify(notes, null, 2)
-    );
-
-    console.log("✅ Note added successfully!");
+    notes.addNote(note);
     break;
 
   case "list":
-    console.log("\n📒 Notes:");
-
-    notes.forEach((item, index) => {
-      console.log(`${index + 1}. ${item}`);
-    });
-
+    notes.listNotes();
     break;
 
   default:
