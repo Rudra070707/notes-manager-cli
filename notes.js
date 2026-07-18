@@ -13,13 +13,28 @@ function saveNotes(notes) {
 }
 
 function addNote(note) {
+    if (!note) {
+  console.log("❌ Please provide a note.");
+  console.log('Example: node index.js add "Learn Express"');
+  return;
+}
   const notes = loadNotes();
 
-  notes.push(note);
+const exists = notes.some(
+  existingNote =>
+    existingNote.toLowerCase() === note.toLowerCase()
+);
 
-  saveNotes(notes);
+if (exists) {
+  console.log("❌ Note already exists.");
+  return;
+}
 
-  console.log("✅ Note added successfully!");
+notes.push(note);
+
+saveNotes(notes);
+
+console.log("✅ Note added successfully!");
 }
 
 function listNotes() {
