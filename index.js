@@ -13,7 +13,9 @@ switch (command) {
   case "list":
     notes.listNotes();
     break;
-
+  case "delete":
+    notes.deleteNote(note);
+    break;
   default:
     console.log("Usage:");
     console.log('node index.js add "Your Note"');
