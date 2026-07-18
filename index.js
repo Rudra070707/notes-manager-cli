@@ -1,16 +1,38 @@
 const fs = require("fs");
 
-// Read file as text
-const data = fs.readFileSync("./notes/notes.json", "utf8");
+// Get command-line arguments
+const args = process.argv.slice(2);
 
-// Convert JSON text to a JavaScript array
+const command = args[0];
+const note = args[1];
+
+// Read notes
+const data = fs.readFileSync("./notes/notes.json", "utf8");
 const notes = JSON.parse(data);
 
-// Display the array
-console.log(notes);
+switch (command) {
+  case "add":
+    notes.push(note);
 
-// Display the first note
-console.log(notes[0]);
+    fs.writeFileSync(
+      "./notes/notes.json",
+      JSON.stringify(notes, null, 2)
+    );
 
-// Display the total number of notes
-console.log("Total Notes:", notes.length);
+    console.log("✅ Note added successfully!");
+    break;
+
+  case "list":
+    console.log("\n📒 Notes:");
+
+    notes.forEach((item, index) => {
+      console.log(`${index + 1}. ${item}`);
+    });
+
+    break;
+
+  default:
+    console.log("Usage:");
+    console.log('node index.js add "Your Note"');
+    console.log("node index.js list");
+}
