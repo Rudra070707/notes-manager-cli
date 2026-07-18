@@ -1,32 +1,16 @@
-const args = process.argv.slice(2);
+const fs = require("fs");
 
-const operation = args[0];
-const a = Number(args[1]);
-const b = Number(args[2]);
+// Read file as text
+const data = fs.readFileSync("./notes/notes.json", "utf8");
 
-let result;
+// Convert JSON text to a JavaScript array
+const notes = JSON.parse(data);
 
-switch (operation) {
-  case "add":
-    result = a + b;
-    break;
+// Display the array
+console.log(notes);
 
-  case "sub":
-    result = a - b;
-    break;
+// Display the first note
+console.log(notes[0]);
 
-  case "mul":
-    result = a * b;
-    break;
-
-  case "div":
-    result = a / b;
-    break;
-
-  default:
-    console.log("Usage:");
-    console.log("node index.js add 10 20");
-    process.exit();
-}
-
-console.log("Result =", result);
+// Display the total number of notes
+console.log("Total Notes:", notes.length);
