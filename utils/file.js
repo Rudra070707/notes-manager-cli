@@ -1,7 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 
-const NOTES_FILE = path.join(__dirname, "..", "data", "notes.json");
+// Use the default notes file unless a test file is provided
+const NOTES_FILE = process.env.NOTES_FILE || path.join(__dirname, "..", "data", "notes.json");
 
 function loadNotes() {
   try {
