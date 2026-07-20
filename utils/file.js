@@ -12,9 +12,9 @@ function loadNotes() {
     }
 
     return JSON.parse(data);
-  } catch (error) {
-    return [];
-  }
+} catch {
+  return [];
+}
 }
 
 function saveNotes(notes) {

@@ -3,7 +3,7 @@ const { loadNotes, saveNotes } = require("../utils/file");
 function addNote(text) {
   if (!text) {
     console.log("❌ Please provide a note.");
-    console.log('Example: node index.js add "Learn Express"');
+    console.log("Example: node index.js add \"Learn Express\"");
     return;
   }
 
