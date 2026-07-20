@@ -64,6 +64,41 @@ function deleteNote(index) {
 
   console.log(`🗑️ Deleted: ${deletedNote}`);
 }
+function updateNote(index, newNote) {
+  if (!newNote) {
+    console.log("❌ Please provide the updated note.");
+    console.log('Example: node index.js update 2 "Learn PostgreSQL"');
+    return;
+  }
+
+  const notes = loadNotes();
+
+  const noteIndex = Number(index) - 1;
+
+  if (isNaN(noteIndex) || noteIndex < 0 || noteIndex >= notes.length) {
+    console.log("❌ Invalid note number.");
+    return;
+  }
+
+  const exists = notes.some(
+    (note, i) =>
+      i !== noteIndex &&
+      note.toLowerCase() === newNote.toLowerCase()
+  );
+
+  if (exists) {
+    console.log("❌ Note already exists.");
+    return;
+  }
+
+  const oldNote = notes[noteIndex];
+
+  notes[noteIndex] = newNote;
+
+  saveNotes(notes);
+
+  console.log(`✏️ Updated:\n"${oldNote}"\n➡️ "${newNote}"`);
+}
 function searchNotes(keyword) {
   if (!keyword) {
     console.log("❌ Please provide a search keyword.");
@@ -92,5 +127,6 @@ module.exports = {
   addNote,
   listNotes,
   deleteNote,
+  updateNote,
   searchNotes
 };
