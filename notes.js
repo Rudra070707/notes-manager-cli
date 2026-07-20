@@ -42,6 +42,11 @@ function listNotes() {
 
   console.log("\n📒 Notes:");
 
+  if (notes.length === 0) {
+    console.log("No notes found.");
+    return;
+  }
+
   notes.forEach((note, index) => {
     console.log(`${index + 1}. ${note}`);
   });
@@ -99,6 +104,11 @@ function updateNote(index, newNote) {
 
   console.log(`✏️ Updated:\n"${oldNote}"\n➡️ "${newNote}"`);
 }
+function clearNotes() {
+  saveNotes([]);
+
+  console.log("🗑️ All notes have been deleted.");
+}
 function searchNotes(keyword) {
   if (!keyword) {
     console.log("❌ Please provide a search keyword.");
@@ -128,5 +138,6 @@ module.exports = {
   listNotes,
   deleteNote,
   updateNote,
-  searchNotes
+  searchNotes,
+  clearNotes
 };

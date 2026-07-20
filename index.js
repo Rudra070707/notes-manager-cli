@@ -22,6 +22,10 @@ switch (command) {
     notes.updateNote(args[1], args.slice(2).join(" "));
     break;
 
+  case "clear":
+    notes.clearNotes();
+    break;
+
   case "search":
     notes.searchNotes(note);
     break;
@@ -32,5 +36,6 @@ switch (command) {
     console.log("node index.js list");
     console.log("node index.js delete <number>");
     console.log('node index.js update <number> "New Note"');
+    console.log("node index.js clear");
     console.log('node index.js search "keyword"');
 }
