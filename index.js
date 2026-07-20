@@ -1,41 +1,35 @@
-const notes = require("./notes");
+const add = require("./commands/add");
+const list = require("./commands/list");
+const del = require("./commands/delete");
+const update = require("./commands/update");
+const complete = require("./commands/complete");
+const uncomplete = require("./commands/uncomplete");
+const search = require("./commands/search");
+const clear = require("./commands/clear");
+const stats = require("./commands/stats");
+const help = require("./commands/help");
 
 const args = process.argv.slice(2);
 
 const command = args[0];
-const note = args[1];
 
-switch (command) {
-  case "add":
-    notes.addNote(note);
-    break;
+const commandMap = {
+  add,
+  list,
+  delete: del,
+  update,
+  complete,
+  uncomplete,
+  search,
+  clear,
+  stats,
+  help
+};
 
-  case "list":
-    notes.listNotes();
-    break;
+const handler = commandMap[command];
 
-  case "delete":
-    notes.deleteNote(note);
-    break;
-
-  case "update":
-    notes.updateNote(args[1], args.slice(2).join(" "));
-    break;
-
-  case "clear":
-    notes.clearNotes();
-    break;
-
-  case "search":
-    notes.searchNotes(note);
-    break;
-
-  default:
-    console.log("Usage:");
-    console.log('node index.js add "Your Note"');
-    console.log("node index.js list");
-    console.log("node index.js delete <number>");
-    console.log('node index.js update <number> "New Note"');
-    console.log("node index.js clear");
-    console.log('node index.js search "keyword"');
+if (handler) {
+  handler(args.slice(1));
+} else {
+  help();
 }
