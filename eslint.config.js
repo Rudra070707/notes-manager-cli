@@ -2,22 +2,20 @@ module.exports = [
   {
     files: ["**/*.js"],
 
-    ignores: [
-      "node_modules/**"
-    ],
+    ignores: ["node_modules/**"],
 
     languageOptions: {
       ecmaVersion: "latest",
-      sourceType: "commonjs"
+      sourceType: "commonjs",
     },
 
     rules: {
-      "eqeqeq": "error",
+      eqeqeq: "error",
       "no-unused-vars": "warn",
-      "semi": ["error", "always"],
-      "quotes": ["error", "double"],
+      semi: ["error", "always"],
+      quotes: ["error", "double"],
       "no-trailing-spaces": "error",
-      "eol-last": ["error", "always"]
-    }
-  }
+      "eol-last": ["error", "always"],
+    },
+  },
 ];

@@ -12,19 +12,16 @@ function loadNotes() {
     }
 
     return JSON.parse(data);
-} catch {
-  return [];
-}
+  } catch {
+    return [];
+  }
 }
 
 function saveNotes(notes) {
-  fs.writeFileSync(
-    NOTES_FILE,
-    JSON.stringify(notes, null, 2)
-  );
+  fs.writeFileSync(NOTES_FILE, JSON.stringify(notes, null, 2));
 }
 
 module.exports = {
   loadNotes,
-  saveNotes
+  saveNotes,
 };

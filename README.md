@@ -74,14 +74,14 @@ node index.js search "Express"
 
 ## Current Features
 
-| Feature | Status |
-|---------|--------|
-| Add Notes | ✅ |
-| List Notes | ✅ |
-| Delete Notes | ✅ |
-| Search Notes | ✅ |
-| Prevent Duplicate Notes | ✅ |
-| Input Validation | ✅ |
+| Feature                 | Status |
+| ----------------------- | ------ |
+| Add Notes               | ✅     |
+| List Notes              | ✅     |
+| Delete Notes            | ✅     |
+| Search Notes            | ✅     |
+| Prevent Duplicate Notes | ✅     |
+| Input Validation        | ✅     |
 
 ---
 

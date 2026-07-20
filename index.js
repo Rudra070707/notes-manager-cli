@@ -23,7 +23,7 @@ const commandMap = {
   search,
   clear,
   stats,
-  help
+  help,
 };
 
 const handler = commandMap[command];
