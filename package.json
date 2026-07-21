@@ -12,7 +12,17 @@
     "format:check": "prettier . --check",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.js": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "keywords": [
     "nodejs",
@@ -27,7 +37,9 @@
   },
   "devDependencies": {
     "eslint": "^10.7.0",
+    "husky": "^9.1.7",
     "jest": "^30.4.2",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.9.5"
   }
 }
