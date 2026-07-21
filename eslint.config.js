@@ -13,7 +13,7 @@ module.exports = [
       eqeqeq: "error",
       "no-unused-vars": "warn",
       semi: ["error", "always"],
-      quotes: ["error", "double"],
+      quotes: ["error", "double", { avoidEscape: true }],
       "no-trailing-spaces": "error",
       "eol-last": ["error", "always"],
     },
