@@ -11,6 +11,7 @@ const uncomplete = require("./commands/uncomplete");
 const search = require("./commands/search");
 const clear = require("./commands/clear");
 const stats = require("./commands/stats");
+const exportCommand = require("./commands/export");
 const help = require("./commands/help");
 
 const program = new Command();
@@ -93,6 +94,13 @@ program
   .description("Show note statistics")
   .action(() => {
     stats([]);
+  });
+
+program
+  .command("export <format>")
+  .description("Export notes (json | csv | md)")
+  .action((format) => {
+    exportCommand(format);
   });
 
 program

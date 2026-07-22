@@ -1,0 +1,82 @@
+[
+  {
+    "id": 2,
+    "text": "Finish Final Internship Report",
+    "priority": "medium",
+    "tags": [],
+    "dueDate": "2026-08-01",
+    "recurrence": null,
+    "completed": false,
+    "createdAt": "2026-07-22T05:04:18.819Z"
+  },
+  {
+    "id": 3,
+    "text": "Drink Water",
+    "priority": "medium",
+    "tags": [],
+    "dueDate": null,
+    "recurrence": "daily",
+    "completed": true,
+    "createdAt": "2026-07-22T05:21:05.069Z"
+  },
+  {
+    "id": 4,
+    "text": "Gym Workout",
+    "priority": "medium",
+    "tags": [],
+    "dueDate": null,
+    "recurrence": "weekly",
+    "completed": false,
+    "createdAt": "2026-07-22T05:21:09.447Z"
+  },
+  {
+    "id": 5,
+    "text": "Pay Rent",
+    "priority": "medium",
+    "tags": [],
+    "dueDate": null,
+    "recurrence": "monthly",
+    "completed": false,
+    "createdAt": "2026-07-22T05:21:14.689Z"
+  },
+  {
+    "id": 6,
+    "text": "Drink Water",
+    "priority": "medium",
+    "tags": [],
+    "dueDate": null,
+    "recurrence": "daily",
+    "completed": false,
+    "createdAt": "2026-07-22T05:29:54.348Z"
+  },
+  {
+    "id": 7,
+    "text": "Drink Water",
+    "priority": "medium",
+    "tags": [],
+    "dueDate": null,
+    "recurrence": "daily",
+    "completed": false,
+    "createdAt": "2026-07-22T09:14:58.205Z"
+  },
+  {
+    "id": 8,
+    "text": "SQLite Migration Complete",
+    "priority": "medium",
+    "tags": [],
+    "dueDate": null,
+    "recurrence": null,
+    "completed": false,
+    "createdAt": "2026-07-22T09:17:34.335Z"
+  },
+  {
+    "id": 9,
+    "text": "Learn Jest",
+    "priority": "medium",
+    "tags": [],
+    "dueDate": null,
+    "recurrence": null,
+    "completed": false,
+    "createdAt": "2026-07-22T09:21:03.115Z"
+  }
+]
