@@ -18,6 +18,16 @@ function sortNotes(notes, sortBy = "created") {
       sorted.sort((a, b) => Number(a.completed) - Number(b.completed));
       break;
 
+    case "due":
+      sorted.sort((a, b) => {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      });
+      break;
+
     case "created":
     default:
       sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));

@@ -2,12 +2,14 @@ const { filterNotes } = require("../filters/noteFilter");
 const { sortNotes } = require("../sorters/noteSorter");
 const { validatePriority } = require("../validators/priorityValidator");
 const { validateTag } = require("../validators/tagValidator");
+const { validateDueDate } = require("../validators/dueDateValidator");
+const { validateRecurrence } = require("../validators/recurrenceValidator");
 const { loadNotes, saveNotes } = require("../utils/file");
 const ui = require("../ui/colors");
 const { printNotes } = require("../ui/table");
 const { validateText } = require("../validators/textValidator");
 
-function addNote(text, priority = "medium", tag = "") {
+function addNote(text, priority = "medium", tag = "", dueDate = null, recurrence = null) {
   if (!validateText(text)) {
     ui.error("✖ Please provide a note.");
     ui.info('Example: notes add "Learn Express"');
@@ -23,6 +25,22 @@ function addNote(text, priority = "medium", tag = "") {
   }
 
   const tags = validateTag(tag);
+
+  const validatedDueDate = validateDueDate(dueDate);
+
+  if (dueDate && !validatedDueDate) {
+    ui.error("✖ Invalid due date.");
+    ui.info("Use format: YYYY-MM-DD");
+    return;
+  }
+
+  const validatedRecurrence = validateRecurrence(recurrence);
+
+  if (recurrence && !validatedRecurrence) {
+    ui.error("✖ Invalid recurrence.");
+    ui.info("Allowed values: daily, weekly, monthly");
+    return;
+  }
 
   const notes = loadNotes();
 
@@ -40,6 +58,8 @@ function addNote(text, priority = "medium", tag = "") {
     text: text.trim(),
     priority: validatedPriority,
     tags,
+    dueDate: validatedDueDate,
+    recurrence: validatedRecurrence,
     completed: false,
     createdAt: new Date().toISOString(),
   };
@@ -133,7 +153,49 @@ function completeNote(id) {
     return;
   }
 
+  if (note.completed) {
+    ui.warning("⚠ Note is already completed.");
+    return;
+  }
+
   note.completed = true;
+
+  if (note.recurrence) {
+    const nextId = Math.max(...notes.map((n) => n.id)) + 1;
+
+    let nextDueDate = note.dueDate;
+
+    if (note.dueDate) {
+      const date = new Date(note.dueDate);
+
+      switch (note.recurrence) {
+        case "daily":
+          date.setDate(date.getDate() + 1);
+          break;
+
+        case "weekly":
+          date.setDate(date.getDate() + 7);
+          break;
+
+        case "monthly":
+          date.setMonth(date.getMonth() + 1);
+          break;
+      }
+
+      nextDueDate = date.toISOString().split("T")[0];
+    }
+
+    notes.push({
+      id: nextId,
+      text: note.text,
+      priority: note.priority,
+      tags: [...note.tags],
+      dueDate: nextDueDate,
+      recurrence: note.recurrence,
+      completed: false,
+      createdAt: new Date().toISOString(),
+    });
+  }
 
   saveNotes(notes);
 

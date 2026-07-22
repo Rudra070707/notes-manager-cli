@@ -22,6 +22,10 @@ program
   .description("Add a new note")
   .option("-p, --priority <priority>", "low | medium | high")
   .option("-t, --tag <tags>", "Comma-separated tags")
+  .option("-d, --due <date>", "Due date (YYYY-MM-DD)")
+  .option("--daily", "Repeat every day")
+  .option("--weekly", "Repeat every week")
+  .option("--monthly", "Repeat every month")
   .action((text, options) => {
     add([text], options);
   });
@@ -29,11 +33,15 @@ program
 program
   .command("list")
   .description("List notes")
-  .option("-s, --sort <type>", "created | priority | status")
+  .option("-s, --sort <type>", "created | priority | status | due")
   .option("-p, --priority <priority>", "low | medium | high")
   .option("-t, --tag <tag>", "Filter by tag")
   .option("-c, --completed", "Show completed notes")
   .option("--pending", "Show pending notes")
+  .option("--today", "Show notes due today")
+  .option("--this-week", "Show notes due this week")
+  .option("--overdue", "Show overdue notes")
+  .option("--upcoming", "Show upcoming notes")
   .action((options) => {
     list([], options);
   });

@@ -21,6 +21,56 @@ function filterNotes(notes, options = {}) {
     filtered = filtered.filter((note) => !note.completed);
   }
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (options.today) {
+    filtered = filtered.filter((note) => {
+      if (!note.dueDate) return false;
+
+      const due = new Date(note.dueDate);
+      due.setHours(0, 0, 0, 0);
+
+      return due.getTime() === today.getTime();
+    });
+  }
+
+  if (options.overdue) {
+    filtered = filtered.filter((note) => {
+      if (!note.dueDate) return false;
+
+      const due = new Date(note.dueDate);
+      due.setHours(0, 0, 0, 0);
+
+      return due < today;
+    });
+  }
+
+  if (options.upcoming) {
+    filtered = filtered.filter((note) => {
+      if (!note.dueDate) return false;
+
+      const due = new Date(note.dueDate);
+      due.setHours(0, 0, 0, 0);
+
+      return due > today;
+    });
+  }
+
+  if (options.thisWeek) {
+    const endOfWeek = new Date(today);
+    endOfWeek.setDate(today.getDate() + 7);
+
+    filtered = filtered.filter((note) => {
+      if (!note.dueDate) return false;
+
+      const due = new Date(note.dueDate);
+      due.setHours(0, 0, 0, 0);
+
+      return due >= today && due <= endOfWeek;
+    });
+  }
+
   return filtered;
 }
 
