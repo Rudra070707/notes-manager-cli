@@ -1,9 +1,0 @@
-id,text,priority,tags,dueDate,recurrence,completed,createdAt
-2,"Finish Final Internship Report",medium,"",2026-08-01,,false,2026-07-22T05:04:18.819Z
-3,"Drink Water",medium,"",,daily,true,2026-07-22T05:21:05.069Z
-4,"Gym Workout",medium,"",,weekly,false,2026-07-22T05:21:09.447Z
-5,"Pay Rent",medium,"",,monthly,false,2026-07-22T05:21:14.689Z
-6,"Drink Water",medium,"",,daily,false,2026-07-22T05:29:54.348Z
-7,"Drink Water",medium,"",,daily,false,2026-07-22T09:14:58.205Z
-8,"SQLite Migration Complete",medium,"",,,false,2026-07-22T09:17:34.335Z
-9,"Learn Jest",medium,"",,,false,2026-07-22T09:21:03.115Z
