@@ -12,6 +12,7 @@ const search = require("./commands/search");
 const clear = require("./commands/clear");
 const stats = require("./commands/stats");
 const exportCommand = require("./commands/export");
+const importCommand = require("./commands/import");
 const help = require("./commands/help");
 
 const program = new Command();
@@ -101,6 +102,13 @@ program
   .description("Export notes (json | csv | md)")
   .action((format) => {
     exportCommand(format);
+  });
+
+program
+  .command("import <format> <file>")
+  .description("Import notes (json)")
+  .action((format, file) => {
+    importCommand(format, file);
   });
 
 program
