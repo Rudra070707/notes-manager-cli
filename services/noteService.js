@@ -4,7 +4,14 @@ const { validatePriority } = require("../validators/priorityValidator");
 const { validateTag } = require("../validators/tagValidator");
 const { validateDueDate } = require("../validators/dueDateValidator");
 const { validateRecurrence } = require("../validators/recurrenceValidator");
-const { loadNotes, saveNotes } = require("../utils/file");
+const {
+  getAllNotes,
+  getNoteById,
+  addNote: addNoteToDB,
+  updateNote: updateNoteInDB,
+  deleteNote: deleteNoteFromDB,
+  clearNotes: clearNotesFromDB,
+} = require("../database/noteRepository");
 const ui = require("../ui/colors");
 const { printNotes } = require("../ui/table");
 const { validateText } = require("../validators/textValidator");
@@ -42,70 +49,86 @@ function addNote(text, priority = "medium", tag = "", dueDate = null, recurrence
     return;
   }
 
-  const notes = loadNotes();
+  getAllNotes((err, notes) => {
+    if (err) {
+      ui.error("✖ Failed to load notes.");
+      return;
+    }
 
-  const exists = notes.some((note) => note.text.toLowerCase() === text.trim().toLowerCase());
+    const exists = notes.some((note) => note.text.toLowerCase() === text.trim().toLowerCase());
 
-  if (exists) {
-    ui.warning("⚠ Note already exists.");
-    return;
-  }
+    if (exists) {
+      ui.warning("⚠ Note already exists.");
+      return;
+    }
 
-  const nextId = notes.length === 0 ? 1 : Math.max(...notes.map((note) => note.id)) + 1;
+    const nextId = notes.length === 0 ? 1 : Math.max(...notes.map((note) => note.id)) + 1;
 
-  const newNote = {
-    id: nextId,
-    text: text.trim(),
-    priority: validatedPriority,
-    tags,
-    dueDate: validatedDueDate,
-    recurrence: validatedRecurrence,
-    completed: false,
-    createdAt: new Date().toISOString(),
-  };
+    const newNote = {
+      id: nextId,
+      text: text.trim(),
+      priority: validatedPriority,
+      tags,
+      dueDate: validatedDueDate,
+      recurrence: validatedRecurrence,
+      completed: false,
+      createdAt: new Date().toISOString(),
+    };
 
-  notes.push(newNote);
+    addNoteToDB(newNote, (err) => {
+      if (err) {
+        ui.error("✖ Failed to add note.");
+        return;
+      }
 
-  saveNotes(notes);
-
-  ui.success("✔ Note added successfully!");
+      ui.success("✔ Note added successfully!");
+    });
+  });
 }
 
 function listNotes(options = {}) {
-  const notes = loadNotes();
+  getAllNotes((err, notes) => {
+    if (err) {
+      ui.error("✖ Failed to load notes.");
+      return;
+    }
 
-  const filtered = filterNotes(notes, options);
+    const filtered = filterNotes(notes, options);
+    const sorted = sortNotes(filtered, options.sort);
 
-  const sorted = sortNotes(filtered, options.sort);
+    ui.heading("\nNotes");
+    ui.divider();
 
-  ui.heading("\nNotes");
-  ui.divider();
+    if (sorted.length === 0) {
+      ui.warning("No notes found.");
+      return;
+    }
 
-  if (sorted.length === 0) {
-    ui.warning("No notes found.");
-    return;
-  }
-
-  printNotes(sorted);
+    printNotes(sorted);
+  });
 }
 
 function deleteNote(id) {
-  const notes = loadNotes();
+  getNoteById(Number(id), (err, note) => {
+    if (err) {
+      ui.error("✖ Failed to load notes.");
+      return;
+    }
 
-  const index = notes.findIndex((note) => note.id === Number(id));
+    if (!note) {
+      ui.error("✖ Invalid note ID.");
+      return;
+    }
 
-  if (index === -1) {
-    ui.error("✖ Invalid note ID.");
-    return;
-  }
+    deleteNoteFromDB(Number(id), (err) => {
+      if (err) {
+        ui.error("✖ Failed to delete note.");
+        return;
+      }
 
-  const deleted = notes[index];
-
-  notes.splice(index, 1);
-
-  saveNotes(notes);
-
-  ui.success(`✔ Deleted: ${deleted.text}`);
+      ui.success(`✔ Deleted: ${note.text}`);
+    });
+  });
 }
 
 function updateNote(id, newText) {
@@ -114,115 +137,159 @@ function updateNote(id, newText) {
     return;
   }
 
-  const notes = loadNotes();
+  getAllNotes((err, notes) => {
+    if (err) {
+      ui.error("✖ Failed to load notes.");
+      return;
+    }
 
-  const note = notes.find((note) => note.id === Number(id));
+    const note = notes.find((note) => note.id === Number(id));
 
-  if (!note) {
-    ui.error("✖ Invalid note ID.");
-    return;
-  }
+    if (!note) {
+      ui.error("✖ Invalid note ID.");
+      return;
+    }
 
-  const exists = notes.some(
-    (n) => n.id !== note.id && n.text.toLowerCase() === newText.trim().toLowerCase()
-  );
+    const exists = notes.some(
+      (n) => n.id !== note.id && n.text.toLowerCase() === newText.trim().toLowerCase()
+    );
 
-  if (exists) {
-    ui.warning("⚠ Note already exists.");
-    return;
-  }
+    if (exists) {
+      ui.warning("⚠ Note already exists.");
+      return;
+    }
 
-  const oldText = note.text;
+    const oldText = note.text;
 
-  note.text = newText.trim();
+    note.text = newText.trim();
 
-  saveNotes(notes);
+    updateNoteInDB(note, (err) => {
+      if (err) {
+        ui.error("✖ Failed to update note.");
+        return;
+      }
 
-  ui.success("✔ Note updated successfully!");
-  console.log(`"${oldText}"`);
-  console.log(`→ "${note.text}"`);
+      ui.success("✔ Note updated successfully!");
+      console.log(`"${oldText}"`);
+      console.log(`→ "${note.text}"`);
+    });
+  });
 }
 
 function completeNote(id) {
-  const notes = loadNotes();
-
-  const note = notes.find((note) => note.id === Number(id));
-
-  if (!note) {
-    ui.error("✖ Invalid note ID.");
-    return;
-  }
-
-  if (note.completed) {
-    ui.warning("⚠ Note is already completed.");
-    return;
-  }
-
-  note.completed = true;
-
-  if (note.recurrence) {
-    const nextId = Math.max(...notes.map((n) => n.id)) + 1;
-
-    let nextDueDate = note.dueDate;
-
-    if (note.dueDate) {
-      const date = new Date(note.dueDate);
-
-      switch (note.recurrence) {
-        case "daily":
-          date.setDate(date.getDate() + 1);
-          break;
-
-        case "weekly":
-          date.setDate(date.getDate() + 7);
-          break;
-
-        case "monthly":
-          date.setMonth(date.getMonth() + 1);
-          break;
-      }
-
-      nextDueDate = date.toISOString().split("T")[0];
+  getAllNotes((err, notes) => {
+    if (err) {
+      ui.error("✖ Failed to load notes.");
+      return;
     }
 
-    notes.push({
-      id: nextId,
-      text: note.text,
-      priority: note.priority,
-      tags: [...note.tags],
-      dueDate: nextDueDate,
-      recurrence: note.recurrence,
-      completed: false,
-      createdAt: new Date().toISOString(),
+    const note = notes.find((note) => note.id === Number(id));
+
+    if (!note) {
+      ui.error("✖ Invalid note ID.");
+      return;
+    }
+
+    if (note.completed) {
+      ui.warning("⚠ Note is already completed.");
+      return;
+    }
+
+    note.completed = true;
+
+    updateNoteInDB(note, (err) => {
+      if (err) {
+        ui.error("✖ Failed to complete note.");
+        return;
+      }
+
+      if (!note.recurrence) {
+        ui.success(`✔ Completed: ${note.text}`);
+        return;
+      }
+
+      const nextId = Math.max(...notes.map((n) => n.id)) + 1;
+
+      let nextDueDate = note.dueDate;
+
+      if (note.dueDate) {
+        const date = new Date(note.dueDate);
+
+        switch (note.recurrence) {
+          case "daily":
+            date.setDate(date.getDate() + 1);
+            break;
+
+          case "weekly":
+            date.setDate(date.getDate() + 7);
+            break;
+
+          case "monthly":
+            date.setMonth(date.getMonth() + 1);
+            break;
+        }
+
+        nextDueDate = date.toISOString().split("T")[0];
+      }
+
+      addNoteToDB(
+        {
+          id: nextId,
+          text: note.text,
+          priority: note.priority,
+          tags: [...note.tags],
+          dueDate: nextDueDate,
+          recurrence: note.recurrence,
+          completed: false,
+          createdAt: new Date().toISOString(),
+        },
+        (err) => {
+          if (err) {
+            ui.error("✖ Failed to create recurring note.");
+            return;
+          }
+
+          ui.success(`✔ Completed: ${note.text}`);
+        }
+      );
     });
-  }
-
-  saveNotes(notes);
-
-  ui.success(`✔ Completed: ${note.text}`);
+  });
 }
 
 function uncompleteNote(id) {
-  const notes = loadNotes();
+  getNoteById(Number(id), (err, note) => {
+    if (err) {
+      ui.error("✖ Failed to load note.");
+      return;
+    }
 
-  const note = notes.find((note) => note.id === Number(id));
+    if (!note) {
+      ui.error("✖ Invalid note ID.");
+      return;
+    }
 
-  if (!note) {
-    ui.error("✖ Invalid note ID.");
-    return;
-  }
+    note.completed = false;
 
-  note.completed = false;
+    updateNoteInDB(note, (err) => {
+      if (err) {
+        ui.error("✖ Failed to update note.");
+        return;
+      }
 
-  saveNotes(notes);
-
-  ui.success(`✔ Marked as pending: ${note.text}`);
+      ui.success(`✔ Marked as pending: ${note.text}`);
+    });
+  });
 }
 
 function clearNotes() {
-  saveNotes([]);
+  clearNotesFromDB((err) => {
+    if (err) {
+      ui.error("✖ Failed to clear notes.");
+      return;
+    }
 
-  ui.success("✔ All notes have been deleted.");
+    ui.success("✔ All notes have been deleted.");
+  });
 }
 
 function searchNotes(keyword) {
@@ -231,37 +298,47 @@ function searchNotes(keyword) {
     return;
   }
 
-  const notes = loadNotes();
+  getAllNotes((err, notes) => {
+    if (err) {
+      ui.error("✖ Failed to load notes.");
+      return;
+    }
 
-  const results = notes.filter((note) => note.text.toLowerCase().includes(keyword.toLowerCase()));
+    const results = notes.filter((note) => note.text.toLowerCase().includes(keyword.toLowerCase()));
 
-  ui.heading("\nSearch Results");
-  ui.divider();
+    ui.heading("\nSearch Results");
+    ui.divider();
 
-  if (results.length === 0) {
-    ui.warning("No matching notes found.");
-    return;
-  }
+    if (results.length === 0) {
+      ui.warning("No matching notes found.");
+      return;
+    }
 
-  printNotes(results);
+    printNotes(results);
+  });
 }
 
 function showStats() {
-  const notes = loadNotes();
+  getAllNotes((err, notes) => {
+    if (err) {
+      ui.error("✖ Failed to load notes.");
+      return;
+    }
 
-  const total = notes.length;
-  const completed = notes.filter((note) => note.completed).length;
-  const pending = total - completed;
+    const total = notes.length;
+    const completed = notes.filter((note) => note.completed).length;
+    const pending = total - completed;
 
-  const completionRate = total === 0 ? 0 : ((completed / total) * 100).toFixed(2);
+    const completionRate = total === 0 ? 0 : ((completed / total) * 100).toFixed(2);
 
-  ui.heading("\nNotes Statistics");
-  ui.divider();
+    ui.heading("\nNotes Statistics");
+    ui.divider();
 
-  console.log(`Total Notes     : ${total}`);
-  console.log(`Completed Notes : ${completed}`);
-  console.log(`Pending Notes   : ${pending}`);
-  console.log(`Completion Rate : ${completionRate}%`);
+    console.log(`Total Notes     : ${total}`);
+    console.log(`Completed Notes : ${completed}`);
+    console.log(`Pending Notes   : ${pending}`);
+    console.log(`Completion Rate : ${completionRate}%`);
+  });
 }
 
 module.exports = {
