@@ -1,32 +1,10 @@
 [
   {
     "id": 1,
-    "text": "Learn Node.js",
-    "completed": true,
-    "createdAt": "2026-07-20T11:18:14.353Z"
-  },
-  {
-    "id": 2,
-    "text": "Learn Express",
+    "text": "Practice React",
+    "priority": "medium",
+    "tags": ["frontend", "study"],
     "completed": false,
-    "createdAt": "2026-07-20T11:18:14.404Z"
-  },
-  {
-    "id": 3,
-    "text": "Refactored File Utility",
-    "completed": false,
-    "createdAt": "2026-07-20T11:39:50.925Z"
-  },
-  {
-    "id": 4,
-    "text": "Service Layer",
-    "completed": false,
-    "createdAt": "2026-07-20T11:51:16.074Z"
-  },
-  {
-    "id": 5,
-    "text": "Command Layer Test",
-    "completed": false,
-    "createdAt": "2026-07-20T11:59:16.985Z"
+    "createdAt": "2026-07-22T04:16:57.530Z"
   }
 ]

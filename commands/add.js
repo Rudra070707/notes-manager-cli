@@ -1,7 +1,5 @@
-const noteService = require("../services/noteService");
+const { addNote } = require("../services/noteService");
 
-function execute(args) {
-  noteService.addNote(args.join(" "));
-}
-
-module.exports = execute;
+module.exports = function (args, options = {}) {
+  addNote(args[0], options.priority, options.tag);
+};

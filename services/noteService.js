@@ -1,18 +1,35 @@
+const { filterNotes } = require("../filters/noteFilter");
+const { sortNotes } = require("../sorters/noteSorter");
+const { validatePriority } = require("../validators/priorityValidator");
+const { validateTag } = require("../validators/tagValidator");
 const { loadNotes, saveNotes } = require("../utils/file");
+const ui = require("../ui/colors");
+const { printNotes } = require("../ui/table");
+const { validateText } = require("../validators/textValidator");
 
-function addNote(text) {
-  if (!text) {
-    console.log("Error: Please provide a note.");
-    console.log('Example: node index.js add "Learn Express"');
+function addNote(text, priority = "medium", tag = "") {
+  if (!validateText(text)) {
+    ui.error("✖ Please provide a note.");
+    ui.info('Example: notes add "Learn Express"');
     return;
   }
 
+  const validatedPriority = validatePriority(priority);
+
+  if (!validatedPriority) {
+    ui.error("✖ Invalid priority.");
+    ui.info("Allowed values: low, medium, high");
+    return;
+  }
+
+  const tags = validateTag(tag);
+
   const notes = loadNotes();
 
-  const exists = notes.some((note) => note.text.toLowerCase() === text.toLowerCase());
+  const exists = notes.some((note) => note.text.toLowerCase() === text.trim().toLowerCase());
 
   if (exists) {
-    console.log("Error: Note already exists.");
+    ui.warning("⚠ Note already exists.");
     return;
   }
 
@@ -20,7 +37,9 @@ function addNote(text) {
 
   const newNote = {
     id: nextId,
-    text,
+    text: text.trim(),
+    priority: validatedPriority,
+    tags,
     completed: false,
     createdAt: new Date().toISOString(),
   };
@@ -29,23 +48,25 @@ function addNote(text) {
 
   saveNotes(notes);
 
-  console.log("Success: Note added successfully!");
+  ui.success("✔ Note added successfully!");
 }
 
-function listNotes() {
+function listNotes(options = {}) {
   const notes = loadNotes();
 
-  console.log("\nNotes:");
+  const filtered = filterNotes(notes, options);
 
-  if (notes.length === 0) {
-    console.log("No notes found.");
+  const sorted = sortNotes(filtered, options.sort);
+
+  ui.heading("\nNotes");
+  ui.divider();
+
+  if (sorted.length === 0) {
+    ui.warning("No notes found.");
     return;
   }
 
-  notes.forEach((note) => {
-    const status = note.completed ? "[Completed]" : "[Pending]";
-    console.log(`${status} [${note.id}] ${note.text}`);
-  });
+  printNotes(sorted);
 }
 
 function deleteNote(id) {
@@ -54,7 +75,7 @@ function deleteNote(id) {
   const index = notes.findIndex((note) => note.id === Number(id));
 
   if (index === -1) {
-    console.log("Error: Invalid note ID.");
+    ui.error("✖ Invalid note ID.");
     return;
   }
 
@@ -64,12 +85,12 @@ function deleteNote(id) {
 
   saveNotes(notes);
 
-  console.log(`Deleted: ${deleted.text}`);
+  ui.success(`✔ Deleted: ${deleted.text}`);
 }
 
 function updateNote(id, newText) {
-  if (!newText) {
-    console.log("Error: Please provide the updated note.");
+  if (!validateText(newText)) {
+    ui.error("✖ Please provide the updated note.");
     return;
   }
 
@@ -78,28 +99,28 @@ function updateNote(id, newText) {
   const note = notes.find((note) => note.id === Number(id));
 
   if (!note) {
-    console.log("Error: Invalid note ID.");
+    ui.error("✖ Invalid note ID.");
     return;
   }
 
   const exists = notes.some(
-    (n) => n.id !== note.id && n.text.toLowerCase() === newText.toLowerCase()
+    (n) => n.id !== note.id && n.text.toLowerCase() === newText.trim().toLowerCase()
   );
 
   if (exists) {
-    console.log("Error: Note already exists.");
+    ui.warning("⚠ Note already exists.");
     return;
   }
 
   const oldText = note.text;
 
-  note.text = newText;
+  note.text = newText.trim();
 
   saveNotes(notes);
 
-  console.log("Updated:");
+  ui.success("✔ Note updated successfully!");
   console.log(`"${oldText}"`);
-  console.log(`-> "${newText}"`);
+  console.log(`→ "${note.text}"`);
 }
 
 function completeNote(id) {
@@ -108,7 +129,7 @@ function completeNote(id) {
   const note = notes.find((note) => note.id === Number(id));
 
   if (!note) {
-    console.log("Error: Invalid note ID.");
+    ui.error("✖ Invalid note ID.");
     return;
   }
 
@@ -116,7 +137,7 @@ function completeNote(id) {
 
   saveNotes(notes);
 
-  console.log(`Completed: ${note.text}`);
+  ui.success(`✔ Completed: ${note.text}`);
 }
 
 function uncompleteNote(id) {
@@ -125,7 +146,7 @@ function uncompleteNote(id) {
   const note = notes.find((note) => note.id === Number(id));
 
   if (!note) {
-    console.log("Error: Invalid note ID.");
+    ui.error("✖ Invalid note ID.");
     return;
   }
 
@@ -133,17 +154,18 @@ function uncompleteNote(id) {
 
   saveNotes(notes);
 
-  console.log(`Marked as pending: ${note.text}`);
+  ui.success(`✔ Marked as pending: ${note.text}`);
 }
 
 function clearNotes() {
   saveNotes([]);
-  console.log("All notes have been deleted.");
+
+  ui.success("✔ All notes have been deleted.");
 }
 
 function searchNotes(keyword) {
   if (!keyword) {
-    console.log("Error: Please provide a keyword.");
+    ui.error("✖ Please provide a keyword.");
     return;
   }
 
@@ -151,17 +173,15 @@ function searchNotes(keyword) {
 
   const results = notes.filter((note) => note.text.toLowerCase().includes(keyword.toLowerCase()));
 
-  console.log("\nSearch Results\n");
+  ui.heading("\nSearch Results");
+  ui.divider();
 
   if (results.length === 0) {
-    console.log("No matching notes found.");
+    ui.warning("No matching notes found.");
     return;
   }
 
-  results.forEach((note) => {
-    const status = note.completed ? "[Completed]" : "[Pending]";
-    console.log(`${status} [${note.id}] ${note.text}`);
-  });
+  printNotes(results);
 }
 
 function showStats() {
@@ -173,8 +193,9 @@ function showStats() {
 
   const completionRate = total === 0 ? 0 : ((completed / total) * 100).toFixed(2);
 
-  console.log("\nNotes Statistics");
-  console.log("----------------");
+  ui.heading("\nNotes Statistics");
+  ui.divider();
+
   console.log(`Total Notes     : ${total}`);
   console.log(`Completed Notes : ${completed}`);
   console.log(`Pending Notes   : ${pending}`);
