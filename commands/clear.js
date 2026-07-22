@@ -1,7 +1,14 @@
-const noteService = require("../services/noteService");
+const { confirm } = require("../helpers/confirm");
+const { clearNotes } = require("../services/noteService");
+const ui = require("../ui/colors");
 
-function execute() {
-  noteService.clearNotes();
-}
+module.exports = async function () {
+  const approved = await confirm("Are you sure you want to delete ALL notes?");
 
-module.exports = execute;
+  if (!approved) {
+    ui.warning("Operation cancelled.");
+    return;
+  }
+
+  clearNotes();
+};

@@ -1,6 +1,9 @@
 {
   "name": "notes-manager-cli",
   "version": "1.0.0",
+  "bin": {
+    "notes": "./index.js"
+  },
   "description": "A command-line notes manager built with Node.js",
   "main": "index.js",
   "type": "commonjs",
@@ -33,7 +36,11 @@
   "author": "Rudra Bandekar",
   "license": "ISC",
   "dependencies": {
-    "chalk": "^5.6.2"
+    "chalk": "^4.1.2",
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.3",
+    "prompts": "^2.4.2",
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "eslint": "^10.7.0",

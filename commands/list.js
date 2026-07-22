@@ -1,7 +1,5 @@
-const noteService = require("../services/noteService");
+const { listNotes } = require("../services/noteService");
 
-function execute() {
-  noteService.listNotes();
-}
-
-module.exports = execute;
+module.exports = function (args, options = {}) {
+  listNotes(options);
+};
