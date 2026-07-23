@@ -24,6 +24,32 @@ function createTimestamp() {
   return `${year}-${month}-${day}_${hour}-${minute}-${second}`;
 }
 
+function getExporter(format) {
+  switch (format.toLowerCase()) {
+    case "json":
+      return {
+        extension: "json",
+        exporter: exportJson,
+      };
+
+    case "csv":
+      return {
+        extension: "csv",
+        exporter: exportCsv,
+      };
+
+    case "md":
+    case "markdown":
+      return {
+        extension: "md",
+        exporter: exportMarkdown,
+      };
+
+    default:
+      return null;
+  }
+}
+
 function exportJson(notes, filePath) {
   fs.writeFileSync(filePath, JSON.stringify(notes, null, 2), "utf8");
 }
@@ -73,37 +99,20 @@ function exportNotes(format) {
       return;
     }
 
-    const timestamp = createTimestamp();
+    // Use exported function so Jest can mock it later
+    const exportConfig = module.exports.getExporter(format);
 
-    let extension;
-    let exporter;
-
-    switch (format.toLowerCase()) {
-      case "json":
-        extension = "json";
-        exporter = exportJson;
-        break;
-
-      case "csv":
-        extension = "csv";
-        exporter = exportCsv;
-        break;
-
-      case "md":
-      case "markdown":
-        extension = "md";
-        exporter = exportMarkdown;
-        break;
-
-      default:
-        console.log("Unsupported export format.");
-        return;
+    if (!exportConfig) {
+      console.log("Unsupported export format.");
+      return;
     }
 
-    const filename = `notes-${timestamp}.${extension}`;
+    const timestamp = createTimestamp();
+
+    const filename = `notes-${timestamp}.${exportConfig.extension}`;
     const filePath = path.join(EXPORT_DIRECTORY, filename);
 
-    exporter(notes, filePath);
+    exportConfig.exporter(notes, filePath);
 
     console.log(`\n✔ Exported ${notes.length} notes`);
     console.log(filePath);
@@ -111,5 +120,12 @@ function exportNotes(format) {
 }
 
 module.exports = {
+  EXPORT_DIRECTORY,
   exportNotes,
+  exportJson,
+  exportCsv,
+  exportMarkdown,
+  createTimestamp,
+  ensureExportDirectory,
+  getExporter,
 };

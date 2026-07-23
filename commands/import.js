@@ -1,4 +1,8 @@
-const { importJson, importCsv, importMarkdown } = require("../services/importService");
+const {
+  importJson,
+  importCsv,
+  importMarkdown,
+} = require("../services/importService");
 
 function handleImportCommand(format, file) {
   if (!format || !file) {

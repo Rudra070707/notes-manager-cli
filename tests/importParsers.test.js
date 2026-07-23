@@ -1,4 +1,8 @@
-const { parseJson, parseCsv, parseMarkdown } = require("../utils/importParsers");
+const {
+  parseJson,
+  parseCsv,
+  parseMarkdown,
+} = require("../utils/importParsers");
 
 describe("Import Parsers", () => {
   test("should parse valid JSON", () => {

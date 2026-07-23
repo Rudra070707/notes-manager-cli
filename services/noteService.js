@@ -16,7 +16,13 @@ const ui = require("../ui/colors");
 const { printNotes } = require("../ui/table");
 const { validateText } = require("../validators/textValidator");
 
-function addNote(text, priority = "medium", tag = "", dueDate = null, recurrence = null) {
+function addNote(
+  text,
+  priority = "medium",
+  tag = "",
+  dueDate = null,
+  recurrence = null
+) {
   if (!validateText(text)) {
     ui.error("✖ Please provide a note.");
     ui.info('Example: notes add "Learn Express"');
@@ -55,14 +61,17 @@ function addNote(text, priority = "medium", tag = "", dueDate = null, recurrence
       return;
     }
 
-    const exists = notes.some((note) => note.text.toLowerCase() === text.trim().toLowerCase());
+    const exists = notes.some(
+      (note) => note.text.toLowerCase() === text.trim().toLowerCase()
+    );
 
     if (exists) {
       ui.warning("⚠ Note already exists.");
       return;
     }
 
-    const nextId = notes.length === 0 ? 1 : Math.max(...notes.map((note) => note.id)) + 1;
+    const nextId =
+      notes.length === 0 ? 1 : Math.max(...notes.map((note) => note.id)) + 1;
 
     const newNote = {
       id: nextId,
@@ -151,7 +160,9 @@ function updateNote(id, newText) {
     }
 
     const exists = notes.some(
-      (n) => n.id !== note.id && n.text.toLowerCase() === newText.trim().toLowerCase()
+      (n) =>
+        n.id !== note.id &&
+        n.text.toLowerCase() === newText.trim().toLowerCase()
     );
 
     if (exists) {
@@ -304,7 +315,9 @@ function searchNotes(keyword) {
       return;
     }
 
-    const results = notes.filter((note) => note.text.toLowerCase().includes(keyword.toLowerCase()));
+    const results = notes.filter((note) =>
+      note.text.toLowerCase().includes(keyword.toLowerCase())
+    );
 
     ui.heading("\nSearch Results");
     ui.divider();
@@ -329,7 +342,8 @@ function showStats() {
     const completed = notes.filter((note) => note.completed).length;
     const pending = total - completed;
 
-    const completionRate = total === 0 ? 0 : ((completed / total) * 100).toFixed(2);
+    const completionRate =
+      total === 0 ? 0 : ((completed / total) * 100).toFixed(2);
 
     ui.heading("\nNotes Statistics");
     ui.divider();

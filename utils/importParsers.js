@@ -20,7 +20,9 @@ function parseCsv(content) {
       id: Number(parts[0]),
       text: parts[1].replace(/^"|"$/g, "").replace(/""/g, '"'),
       priority: parts[2],
-      tags: parts[3] ? parts[3].replace(/^"|"$/g, "").split(";").filter(Boolean) : [],
+      tags: parts[3]
+        ? parts[3].replace(/^"|"$/g, "").split(";").filter(Boolean)
+        : [],
       dueDate: parts[4] || null,
       recurrence: parts[5] || null,
       completed: parts[6] === "true",
@@ -49,7 +51,10 @@ function parseMarkdown(content) {
       completed: getValue(lines[3]) === "true",
       dueDate: getValue(lines[4]) === "-" ? null : getValue(lines[4]),
       recurrence: getValue(lines[5]) === "-" ? null : getValue(lines[5]),
-      tags: getValue(lines[6]) === "-" ? [] : getValue(lines[6]).split(", ").filter(Boolean),
+      tags:
+        getValue(lines[6]) === "-"
+          ? []
+          : getValue(lines[6]).split(", ").filter(Boolean),
       createdAt: getValue(lines[7]),
     };
   });

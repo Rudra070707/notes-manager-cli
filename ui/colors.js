@@ -11,7 +11,8 @@ module.exports = {
 
   heading: (text) => console.log(chalk.blue.bold(text)),
 
-  divider: () => console.log(chalk.gray("--------------------------------------")),
+  divider: () =>
+    console.log(chalk.gray("--------------------------------------")),
 
   normal: (text) => console.log(text),
 };

@@ -2,7 +2,11 @@ const fs = require("fs");
 const path = require("path");
 
 const repository = require("../database/noteRepository");
-const { parseJson, parseCsv, parseMarkdown } = require("../utils/importParsers");
+const {
+  parseJson,
+  parseCsv,
+  parseMarkdown,
+} = require("../utils/importParsers");
 
 function importNotes(notes) {
   let imported = 0;
@@ -29,7 +33,9 @@ function importNotes(notes) {
       }
 
       repository.addNote(note, (err) => {
-        if (!err) {
+        if (err) {
+          console.error(err.message);
+        } else {
           imported++;
         }
 
@@ -88,6 +94,7 @@ function importMarkdown(filePath) {
     console.log("File not found.");
     return;
   }
+
   let notes;
 
   try {
@@ -96,6 +103,7 @@ function importMarkdown(filePath) {
     console.log(error.message);
     return;
   }
+
   importNotes(notes);
 }
 

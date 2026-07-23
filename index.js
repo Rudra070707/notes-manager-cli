@@ -17,7 +17,10 @@ const help = require("./commands/help");
 
 const program = new Command();
 
-program.name("notes").description("Professional Notes Manager CLI").version("1.0.0");
+program
+  .name("notes")
+  .description("Professional Notes Manager CLI")
+  .version("1.0.0");
 
 program
   .command("add <text>")

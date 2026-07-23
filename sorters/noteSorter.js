@@ -10,7 +10,9 @@ function sortNotes(notes, sortBy = "created") {
   switch (sortBy) {
     case "priority":
       sorted.sort(
-        (a, b) => PRIORITY_ORDER[b.priority || "medium"] - PRIORITY_ORDER[a.priority || "medium"]
+        (a, b) =>
+          PRIORITY_ORDER[b.priority || "medium"] -
+          PRIORITY_ORDER[a.priority || "medium"]
       );
       break;
 
