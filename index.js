@@ -24,6 +24,8 @@ const backup = require('./commands/backup');
 const backups = require('./commands/backups');
 const restoreBackup = require('./commands/restoreBackup');
 
+const config = require('./commands/config');
+
 const program = new Command();
 
 program
@@ -188,6 +190,17 @@ program
   .description('Restore database from a backup')
   .action((backupFile) => {
     restoreBackup([backupFile]);
+  });
+
+/* ==========================
+   CONFIGURATION COMMANDS
+========================== */
+
+program
+  .command('config <action> [key] [value]')
+  .description('Manage application configuration')
+  .action((action, key, value) => {
+    config([action, key, value]);
   });
 
 program
