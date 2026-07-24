@@ -1,4 +1,4 @@
-jest.mock("../ui/colors", () => ({
+jest.mock('../ui/colors', () => ({
   success: jest.fn(),
   error: jest.fn(),
   warning: jest.fn(),
@@ -7,30 +7,39 @@ jest.mock("../ui/colors", () => ({
   divider: jest.fn(),
 }));
 
-jest.mock("../ui/table", () => ({
+jest.mock('../ui/table', () => ({
   printNotes: jest.fn(),
 }));
 
-jest.mock("../database/noteRepository", () => ({
+jest.mock('../database/noteRepository', () => ({
   getAllNotes: jest.fn(),
+  getArchivedNotes: jest.fn(),
   getNoteById: jest.fn(),
   addNote: jest.fn(),
   updateNote: jest.fn(),
+  archiveNote: jest.fn(),
+  restoreArchivedNote: jest.fn(),
+  clearArchivedNotes: jest.fn(),
   deleteNote: jest.fn(),
   clearNotes: jest.fn(),
 }));
-
-const ui = require("../ui/colors");
-const { printNotes } = require("../ui/table");
-const repository = require("../database/noteRepository");
-const service = require("../services/noteService");
+jest.mock('../database/undoRepository', () => ({
+  saveUndo: jest.fn(),
+  getLastUndo: jest.fn(),
+  deleteLastUndo: jest.fn(),
+}));
+const ui = require('../ui/colors');
+const { printNotes } = require('../ui/table');
+const repository = require('../database/noteRepository');
+const undoRepository = require('../database/undoRepository');
+const service = require('../services/noteService');
 
 beforeEach(() => {
   jest.clearAllMocks();
 });
 
-describe("Note Service", () => {
-  test("should add a valid note", () => {
+describe('Note Service', () => {
+  test('should add a valid note', () => {
     repository.getAllNotes.mockImplementation((callback) => {
       callback(null, []);
     });
@@ -38,80 +47,84 @@ describe("Note Service", () => {
     repository.addNote.mockImplementation((note, callback) => {
       callback(null);
     });
-
-    service.addNote("Learn Express");
+    undoRepository.saveUndo.mockImplementation(
+      (operation, payload, callback) => {
+        callback(null);
+      }
+    );
+    service.addNote('Learn Express');
 
     expect(repository.getAllNotes).toHaveBeenCalledTimes(1);
     expect(repository.addNote).toHaveBeenCalledTimes(1);
-    expect(ui.success).toHaveBeenCalledWith("✔ Note added successfully!");
+    expect(ui.success).toHaveBeenCalledWith('✔ Note added successfully!');
   });
 
-  test("should reject an empty note", () => {
-    service.addNote("");
+  test('should reject an empty note', () => {
+    service.addNote('');
 
     expect(repository.getAllNotes).not.toHaveBeenCalled();
     expect(repository.addNote).not.toHaveBeenCalled();
     expect(ui.error).toHaveBeenCalled();
   });
 
-  test("should reject duplicate notes", () => {
+  test('should reject duplicate notes', () => {
     repository.getAllNotes.mockImplementation((callback) => {
       callback(null, [
         {
           id: 1,
-          text: "Learn Express",
+          text: 'Learn Express',
         },
       ]);
     });
 
-    service.addNote("Learn Express");
+    service.addNote('Learn Express');
 
     expect(repository.addNote).not.toHaveBeenCalled();
-    expect(ui.warning).toHaveBeenCalledWith("⚠ Note already exists.");
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note already exists.');
   });
 
-  test("should reject invalid priority", () => {
-    service.addNote("Learn Express", "super-high");
+  test('should reject invalid priority', () => {
+    service.addNote('Learn Express', 'super-high');
 
     expect(repository.getAllNotes).not.toHaveBeenCalled();
     expect(repository.addNote).not.toHaveBeenCalled();
     expect(ui.error).toHaveBeenCalled();
   });
 
-  test("should reject invalid due date", () => {
-    service.addNote("Learn Express", "medium", "", "31-12-2026");
+  test('should reject invalid due date', () => {
+    service.addNote('Learn Express', 'medium', '', '31-12-2026');
 
     expect(repository.getAllNotes).not.toHaveBeenCalled();
     expect(repository.addNote).not.toHaveBeenCalled();
 
-    expect(ui.error).toHaveBeenCalledWith("✖ Invalid due date.");
-    expect(ui.info).toHaveBeenCalledWith("Use format: YYYY-MM-DD");
+    expect(ui.error).toHaveBeenCalledWith('✖ Invalid due date.');
+    expect(ui.info).toHaveBeenCalledWith('Use format: YYYY-MM-DD');
   });
 
-  test("should reject invalid recurrence", () => {
-    service.addNote("Learn Express", "medium", "", null, "yearly");
+  test('should reject invalid recurrence', () => {
+    service.addNote('Learn Express', 'medium', '', null, 'yearly');
 
     expect(repository.getAllNotes).not.toHaveBeenCalled();
     expect(repository.addNote).not.toHaveBeenCalled();
 
-    expect(ui.error).toHaveBeenCalledWith("✖ Invalid recurrence.");
+    expect(ui.error).toHaveBeenCalledWith('✖ Invalid recurrence.');
     expect(ui.info).toHaveBeenCalledWith(
-      "Allowed values: daily, weekly, monthly"
+      'Allowed values: daily, weekly, monthly'
     );
   });
 
-  test("should handle database error while listing notes", () => {
+  test('should handle database error while listing notes', () => {
     repository.getAllNotes.mockImplementation((callback) => {
-      callback(new Error("DB Error"));
+      callback(new Error('DB Error'));
     });
 
     service.listNotes();
 
-    expect(ui.error).toHaveBeenCalledWith("✖ Failed to load notes.");
+    expect(ui.error).toHaveBeenCalledWith('✖ Failed to load notes.');
     expect(printNotes).not.toHaveBeenCalled();
   });
 
-  test("should show warning when there are no notes", () => {
+  test('should show warning when there are no notes', () => {
     repository.getAllNotes.mockImplementation((callback) => {
       callback(null, []);
     });
@@ -120,15 +133,15 @@ describe("Note Service", () => {
 
     expect(ui.heading).toHaveBeenCalled();
     expect(ui.divider).toHaveBeenCalled();
-    expect(ui.warning).toHaveBeenCalledWith("No notes found.");
+    expect(ui.warning).toHaveBeenCalledWith('No notes found.');
     expect(printNotes).not.toHaveBeenCalled();
   });
 
-  test("should print notes when notes exist", () => {
+  test('should print notes when notes exist', () => {
     const notes = [
       {
         id: 1,
-        text: "Learn Express",
+        text: 'Learn Express',
         completed: false,
       },
     ];
@@ -147,7 +160,7 @@ describe("Note Service", () => {
 
   // Add these three tests inside the same describe("Note Service", () => {
 
-  test("should reject deleting an invalid note ID", () => {
+  test('should reject deleting an invalid note ID', () => {
     repository.getNoteById.mockImplementation((id, callback) => {
       callback(null, null);
     });
@@ -155,13 +168,13 @@ describe("Note Service", () => {
     service.deleteNote(1);
 
     expect(repository.deleteNote).not.toHaveBeenCalled();
-    expect(ui.error).toHaveBeenCalledWith("✖ Invalid note ID.");
+    expect(ui.error).toHaveBeenCalledWith('✖ Invalid note ID.');
   });
 
-  test("should handle delete database error", () => {
+  test('should handle delete database error', () => {
     const note = {
       id: 1,
-      text: "Learn Express",
+      text: 'Learn Express',
     };
 
     repository.getNoteById.mockImplementation((id, callback) => {
@@ -169,18 +182,18 @@ describe("Note Service", () => {
     });
 
     repository.deleteNote.mockImplementation((id, callback) => {
-      callback(new Error("DB Error"));
+      callback(new Error('DB Error'));
     });
 
     service.deleteNote(1);
 
-    expect(ui.error).toHaveBeenCalledWith("✖ Failed to delete note.");
+    expect(ui.error).toHaveBeenCalledWith('✖ Failed to delete note.');
   });
 
-  test("should delete a note successfully", () => {
+  test('should delete a note successfully', () => {
     const note = {
       id: 1,
-      text: "Learn Express",
+      text: 'Learn Express',
     };
 
     repository.getNoteById.mockImplementation((id, callback) => {
@@ -195,55 +208,55 @@ describe("Note Service", () => {
 
     expect(repository.deleteNote).toHaveBeenCalledWith(1, expect.any(Function));
 
-    expect(ui.success).toHaveBeenCalledWith("✔ Deleted: Learn Express");
+    expect(ui.success).toHaveBeenCalledWith('✔ Deleted: Learn Express');
   });
-  test("should reject updating with empty text", () => {
-    service.updateNote(1, "");
+  test('should reject updating with empty text', () => {
+    service.updateNote(1, '');
 
     expect(repository.getAllNotes).not.toHaveBeenCalled();
     expect(repository.updateNote).not.toHaveBeenCalled();
 
-    expect(ui.error).toHaveBeenCalledWith("✖ Please provide the updated note.");
+    expect(ui.error).toHaveBeenCalledWith('✖ Please provide the updated note.');
   });
 
-  test("should reject updating an invalid note ID", () => {
+  test('should reject updating an invalid note ID', () => {
     repository.getAllNotes.mockImplementation((callback) => {
       callback(null, []);
     });
 
-    service.updateNote(1, "Updated Note");
+    service.updateNote(1, 'Updated Note');
 
     expect(repository.updateNote).not.toHaveBeenCalled();
 
-    expect(ui.error).toHaveBeenCalledWith("✖ Invalid note ID.");
+    expect(ui.error).toHaveBeenCalledWith('✖ Invalid note ID.');
   });
 
-  test("should reject updating to a duplicate note", () => {
+  test('should reject updating to a duplicate note', () => {
     repository.getAllNotes.mockImplementation((callback) => {
       callback(null, [
         {
           id: 1,
-          text: "First Note",
+          text: 'First Note',
         },
         {
           id: 2,
-          text: "Second Note",
+          text: 'Second Note',
         },
       ]);
     });
 
-    service.updateNote(1, "Second Note");
+    service.updateNote(1, 'Second Note');
 
     expect(repository.updateNote).not.toHaveBeenCalled();
 
-    expect(ui.warning).toHaveBeenCalledWith("⚠ Note already exists.");
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note already exists.');
   });
 
-  test("should update a note successfully", () => {
+  test('should update a note successfully', () => {
     const notes = [
       {
         id: 1,
-        text: "Old Note",
+        text: 'Old Note',
       },
     ];
 
@@ -255,28 +268,28 @@ describe("Note Service", () => {
       callback(null);
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
-    service.updateNote(1, "New Note");
+    service.updateNote(1, 'New Note');
 
     expect(repository.updateNote).toHaveBeenCalledTimes(1);
 
     expect(repository.updateNote).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 1,
-        text: "New Note",
+        text: 'New Note',
       }),
       expect.any(Function)
     );
 
-    expect(ui.success).toHaveBeenCalledWith("✔ Note updated successfully!");
+    expect(ui.success).toHaveBeenCalledWith('✔ Note updated successfully!');
 
     expect(logSpy).toHaveBeenCalledWith('"Old Note"');
     expect(logSpy).toHaveBeenCalledWith('→ "New Note"');
 
     logSpy.mockRestore();
   });
-  test("should reject completing an invalid note ID", () => {
+  test('should reject completing an invalid note ID', () => {
     repository.getAllNotes.mockImplementation((callback) => {
       callback(null, []);
     });
@@ -285,15 +298,15 @@ describe("Note Service", () => {
 
     expect(repository.updateNote).not.toHaveBeenCalled();
 
-    expect(ui.error).toHaveBeenCalledWith("✖ Invalid note ID.");
+    expect(ui.error).toHaveBeenCalledWith('✖ Invalid note ID.');
   });
 
-  test("should reject completing an already completed note", () => {
+  test('should reject completing an already completed note', () => {
     repository.getAllNotes.mockImplementation((callback) => {
       callback(null, [
         {
           id: 1,
-          text: "Learn Express",
+          text: 'Learn Express',
           completed: true,
         },
       ]);
@@ -303,18 +316,18 @@ describe("Note Service", () => {
 
     expect(repository.updateNote).not.toHaveBeenCalled();
 
-    expect(ui.warning).toHaveBeenCalledWith("⚠ Note is already completed.");
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note is already completed.');
   });
 
-  test("should complete a normal note successfully", () => {
+  test('should complete a normal note successfully', () => {
     const notes = [
       {
         id: 1,
-        text: "Learn Express",
+        text: 'Learn Express',
         completed: false,
         recurrence: null,
         dueDate: null,
-        priority: "medium",
+        priority: 'medium',
         tags: [],
       },
     ];
@@ -340,18 +353,18 @@ describe("Note Service", () => {
 
     expect(repository.addNote).not.toHaveBeenCalled();
 
-    expect(ui.success).toHaveBeenCalledWith("✔ Completed: Learn Express");
+    expect(ui.success).toHaveBeenCalledWith('✔ Completed: Learn Express');
   });
-  test("should create the next daily recurring note", () => {
+  test('should create the next daily recurring note', () => {
     const notes = [
       {
         id: 1,
-        text: "Workout",
+        text: 'Workout',
         completed: false,
-        recurrence: "daily",
-        dueDate: "2026-07-15",
-        priority: "high",
-        tags: ["health"],
+        recurrence: 'daily',
+        dueDate: '2026-07-15',
+        priority: 'high',
+        tags: ['health'],
       },
     ];
 
@@ -375,25 +388,25 @@ describe("Note Service", () => {
     expect(repository.addNote).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 2,
-        text: "Workout",
-        recurrence: "daily",
+        text: 'Workout',
+        recurrence: 'daily',
         completed: false,
-        dueDate: "2026-07-16",
+        dueDate: '2026-07-16',
       }),
       expect.any(Function)
     );
 
-    expect(ui.success).toHaveBeenCalledWith("✔ Completed: Workout");
+    expect(ui.success).toHaveBeenCalledWith('✔ Completed: Workout');
   });
-  test("should create the next weekly recurring note", () => {
+  test('should create the next weekly recurring note', () => {
     const notes = [
       {
         id: 1,
-        text: "Weekly Meeting",
+        text: 'Weekly Meeting',
         completed: false,
-        recurrence: "weekly",
-        dueDate: "2026-07-15",
-        priority: "medium",
+        recurrence: 'weekly',
+        dueDate: '2026-07-15',
+        priority: 'medium',
         tags: [],
       },
     ];
@@ -415,23 +428,23 @@ describe("Note Service", () => {
     expect(repository.addNote).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 2,
-        text: "Weekly Meeting",
-        recurrence: "weekly",
-        dueDate: "2026-07-22",
+        text: 'Weekly Meeting',
+        recurrence: 'weekly',
+        dueDate: '2026-07-22',
         completed: false,
       }),
       expect.any(Function)
     );
   });
-  test("should create the next monthly recurring note", () => {
+  test('should create the next monthly recurring note', () => {
     const notes = [
       {
         id: 1,
-        text: "Monthly Report",
+        text: 'Monthly Report',
         completed: false,
-        recurrence: "monthly",
-        dueDate: "2026-07-15",
-        priority: "medium",
+        recurrence: 'monthly',
+        dueDate: '2026-07-15',
+        priority: 'medium',
         tags: [],
       },
     ];
@@ -453,15 +466,15 @@ describe("Note Service", () => {
     expect(repository.addNote).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 2,
-        text: "Monthly Report",
-        recurrence: "monthly",
-        dueDate: "2026-08-15",
+        text: 'Monthly Report',
+        recurrence: 'monthly',
+        dueDate: '2026-08-15',
         completed: false,
       }),
       expect.any(Function)
     );
   });
-  test("should reject uncompleting an invalid note ID", () => {
+  test('should reject uncompleting an invalid note ID', () => {
     repository.getNoteById.mockImplementation((id, callback) => {
       callback(null, null);
     });
@@ -470,13 +483,13 @@ describe("Note Service", () => {
 
     expect(repository.updateNote).not.toHaveBeenCalled();
 
-    expect(ui.error).toHaveBeenCalledWith("✖ Invalid note ID.");
+    expect(ui.error).toHaveBeenCalledWith('✖ Invalid note ID.');
   });
 
-  test("should handle database error while uncompleting a note", () => {
+  test('should handle database error while uncompleting a note', () => {
     const note = {
       id: 1,
-      text: "Learn Express",
+      text: 'Learn Express',
       completed: true,
     };
 
@@ -485,18 +498,18 @@ describe("Note Service", () => {
     });
 
     repository.updateNote.mockImplementation((note, callback) => {
-      callback(new Error("DB Error"));
+      callback(new Error('DB Error'));
     });
 
     service.uncompleteNote(1);
 
-    expect(ui.error).toHaveBeenCalledWith("✖ Failed to update note.");
+    expect(ui.error).toHaveBeenCalledWith('✖ Failed to update note.');
   });
 
-  test("should mark a completed note as pending", () => {
+  test('should mark a completed note as pending', () => {
     const note = {
       id: 1,
-      text: "Learn Express",
+      text: 'Learn Express',
       completed: true,
     };
 
@@ -518,20 +531,20 @@ describe("Note Service", () => {
     );
 
     expect(ui.success).toHaveBeenCalledWith(
-      "✔ Marked as pending: Learn Express"
+      '✔ Marked as pending: Learn Express'
     );
   });
-  test("should handle database error while clearing notes", () => {
+  test('should handle database error while clearing notes', () => {
     repository.clearNotes.mockImplementation((callback) => {
-      callback(new Error("DB Error"));
+      callback(new Error('DB Error'));
     });
 
     service.clearNotes();
 
-    expect(ui.error).toHaveBeenCalledWith("✖ Failed to clear notes.");
+    expect(ui.error).toHaveBeenCalledWith('✖ Failed to clear notes.');
   });
 
-  test("should clear all notes successfully", () => {
+  test('should clear all notes successfully', () => {
     repository.clearNotes.mockImplementation((callback) => {
       callback(null);
     });
@@ -540,53 +553,53 @@ describe("Note Service", () => {
 
     expect(repository.clearNotes).toHaveBeenCalledTimes(1);
 
-    expect(ui.success).toHaveBeenCalledWith("✔ All notes have been deleted.");
+    expect(ui.success).toHaveBeenCalledWith('✔ All notes have been deleted.');
   });
-  test("should reject searching with an empty keyword", () => {
-    service.searchNotes("");
+  test('should reject searching with an empty keyword', () => {
+    service.searchNotes('');
 
     expect(repository.getAllNotes).not.toHaveBeenCalled();
 
-    expect(ui.error).toHaveBeenCalledWith("✖ Please provide a keyword.");
+    expect(ui.error).toHaveBeenCalledWith('✖ Please provide a keyword.');
   });
 
-  test("should handle database error while searching notes", () => {
+  test('should handle database error while searching notes', () => {
     repository.getAllNotes.mockImplementation((callback) => {
-      callback(new Error("DB Error"));
+      callback(new Error('DB Error'));
     });
 
-    service.searchNotes("express");
+    service.searchNotes('express');
 
-    expect(ui.error).toHaveBeenCalledWith("✖ Failed to load notes.");
+    expect(ui.error).toHaveBeenCalledWith('✖ Failed to load notes.');
   });
 
-  test("should show warning when no matching notes are found", () => {
+  test('should show warning when no matching notes are found', () => {
     repository.getAllNotes.mockImplementation((callback) => {
       callback(null, [
         {
           id: 1,
-          text: "Learn Node",
+          text: 'Learn Node',
         },
       ]);
     });
 
-    service.searchNotes("python");
+    service.searchNotes('python');
 
     expect(ui.heading).toHaveBeenCalled();
     expect(ui.divider).toHaveBeenCalled();
 
-    expect(ui.warning).toHaveBeenCalledWith("No matching notes found.");
+    expect(ui.warning).toHaveBeenCalledWith('No matching notes found.');
   });
 
-  test("should print matching search results", () => {
+  test('should print matching search results', () => {
     const notes = [
       {
         id: 1,
-        text: "Learn Express",
+        text: 'Learn Express',
       },
       {
         id: 2,
-        text: "Learn React",
+        text: 'Learn React',
       },
     ];
 
@@ -594,24 +607,24 @@ describe("Note Service", () => {
       callback(null, notes);
     });
 
-    service.searchNotes("express");
+    service.searchNotes('express');
 
     expect(ui.heading).toHaveBeenCalled();
     expect(ui.divider).toHaveBeenCalled();
 
     expect(printNotes).toHaveBeenCalledWith([notes[0]]);
   });
-  test("should handle database error while showing statistics", () => {
+  test('should handle database error while showing statistics', () => {
     repository.getAllNotes.mockImplementation((callback) => {
-      callback(new Error("DB Error"));
+      callback(new Error('DB Error'));
     });
 
     service.showStats();
 
-    expect(ui.error).toHaveBeenCalledWith("✖ Failed to load notes.");
+    expect(ui.error).toHaveBeenCalledWith('✖ Failed to load notes.');
   });
 
-  test("should display note statistics", () => {
+  test('should display note statistics', () => {
     const notes = [
       {
         id: 1,
@@ -631,18 +644,99 @@ describe("Note Service", () => {
       callback(null, notes);
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
     service.showStats();
 
     expect(ui.heading).toHaveBeenCalled();
     expect(ui.divider).toHaveBeenCalled();
 
-    expect(logSpy).toHaveBeenCalledWith("Total Notes     : 3");
-    expect(logSpy).toHaveBeenCalledWith("Completed Notes : 2");
-    expect(logSpy).toHaveBeenCalledWith("Pending Notes   : 1");
-    expect(logSpy).toHaveBeenCalledWith("Completion Rate : 66.67%");
+    expect(logSpy).toHaveBeenCalledWith('Total Notes     : 3');
+    expect(logSpy).toHaveBeenCalledWith('Completed Notes : 2');
+    expect(logSpy).toHaveBeenCalledWith('Pending Notes   : 1');
+    expect(logSpy).toHaveBeenCalledWith('Completion Rate : 66.67%');
 
     logSpy.mockRestore();
+  });
+  test('should archive a note successfully', () => {
+    const note = {
+      id: 1,
+      text: 'Learn Express',
+      archived: false,
+    };
+
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, note);
+    });
+
+    repository.archiveNote.mockImplementation((id, callback) => {
+      callback(null);
+    });
+
+    service.archiveNote(1);
+
+    expect(repository.archiveNote).toHaveBeenCalledWith(
+      1,
+      expect.any(Function)
+    );
+
+    expect(ui.success).toHaveBeenCalledWith('✔ Archived: Learn Express');
+  });
+
+  test('should list archived notes', () => {
+    const notes = [
+      {
+        id: 1,
+        text: 'Archived Note',
+        archived: true,
+      },
+    ];
+
+    repository.getArchivedNotes.mockImplementation((callback) => {
+      callback(null, notes);
+    });
+
+    service.listArchivedNotes();
+
+    expect(ui.heading).toHaveBeenCalled();
+    expect(ui.divider).toHaveBeenCalled();
+    expect(printNotes).toHaveBeenCalledWith(notes);
+  });
+
+  test('should restore an archived note', () => {
+    const note = {
+      id: 1,
+      text: 'Archived Note',
+      archived: true,
+    };
+
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, note);
+    });
+
+    repository.restoreArchivedNote.mockImplementation((id, callback) => {
+      callback(null);
+    });
+
+    service.restoreArchivedNote(1);
+
+    expect(repository.restoreArchivedNote).toHaveBeenCalledWith(
+      1,
+      expect.any(Function)
+    );
+
+    expect(ui.success).toHaveBeenCalledWith('✔ Restored: Archived Note');
+  });
+
+  test('should clear archived notes', () => {
+    repository.clearArchivedNotes.mockImplementation((callback) => {
+      callback(null);
+    });
+
+    service.clearArchivedNotes();
+
+    expect(repository.clearArchivedNotes).toHaveBeenCalledTimes(1);
+
+    expect(ui.success).toHaveBeenCalledWith('✔ Archived notes cleared.');
   });
 });

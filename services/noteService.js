@@ -1,30 +1,35 @@
-const { filterNotes } = require("../filters/noteFilter");
-const { sortNotes } = require("../sorters/noteSorter");
-const { validatePriority } = require("../validators/priorityValidator");
-const { validateTag } = require("../validators/tagValidator");
-const { validateDueDate } = require("../validators/dueDateValidator");
-const { validateRecurrence } = require("../validators/recurrenceValidator");
+const { filterNotes } = require('../filters/noteFilter');
+const { sortNotes } = require('../sorters/noteSorter');
+const { validatePriority } = require('../validators/priorityValidator');
+const { validateTag } = require('../validators/tagValidator');
+const { validateDueDate } = require('../validators/dueDateValidator');
+const { validateRecurrence } = require('../validators/recurrenceValidator');
 const {
   getAllNotes,
+  getArchivedNotes,
   getNoteById,
   addNote: addNoteToDB,
+  addNoteDirect,
   updateNote: updateNoteInDB,
+  archiveNote: archiveNoteInDB,
+  restoreArchivedNote: restoreArchivedNoteInDB,
+  clearArchivedNotes: clearArchivedNotesFromDB,
   deleteNote: deleteNoteFromDB,
   clearNotes: clearNotesFromDB,
-} = require("../database/noteRepository");
-const ui = require("../ui/colors");
-const { printNotes } = require("../ui/table");
-const { validateText } = require("../validators/textValidator");
-
+} = require('../database/noteRepository');
+const ui = require('../ui/colors');
+const { printNotes } = require('../ui/table');
+const { validateText } = require('../validators/textValidator');
+const { saveUndo } = require('../database/undoRepository');
 function addNote(
   text,
-  priority = "medium",
-  tag = "",
+  priority = 'medium',
+  tag = '',
   dueDate = null,
   recurrence = null
 ) {
   if (!validateText(text)) {
-    ui.error("✖ Please provide a note.");
+    ui.error('✖ Please provide a note.');
     ui.info('Example: notes add "Learn Express"');
     return;
   }
@@ -32,8 +37,8 @@ function addNote(
   const validatedPriority = validatePriority(priority);
 
   if (!validatedPriority) {
-    ui.error("✖ Invalid priority.");
-    ui.info("Allowed values: low, medium, high");
+    ui.error('✖ Invalid priority.');
+    ui.info('Allowed values: low, medium, high');
     return;
   }
 
@@ -42,22 +47,22 @@ function addNote(
   const validatedDueDate = validateDueDate(dueDate);
 
   if (dueDate && !validatedDueDate) {
-    ui.error("✖ Invalid due date.");
-    ui.info("Use format: YYYY-MM-DD");
+    ui.error('✖ Invalid due date.');
+    ui.info('Use format: YYYY-MM-DD');
     return;
   }
 
   const validatedRecurrence = validateRecurrence(recurrence);
 
   if (recurrence && !validatedRecurrence) {
-    ui.error("✖ Invalid recurrence.");
-    ui.info("Allowed values: daily, weekly, monthly");
+    ui.error('✖ Invalid recurrence.');
+    ui.info('Allowed values: daily, weekly, monthly');
     return;
   }
 
   getAllNotes((err, notes) => {
     if (err) {
-      ui.error("✖ Failed to load notes.");
+      ui.error('✖ Failed to load notes.');
       return;
     }
 
@@ -66,7 +71,7 @@ function addNote(
     );
 
     if (exists) {
-      ui.warning("⚠ Note already exists.");
+      ui.warning('⚠ Note already exists.');
       return;
     }
 
@@ -81,16 +86,29 @@ function addNote(
       dueDate: validatedDueDate,
       recurrence: validatedRecurrence,
       completed: false,
+      archived: false,
       createdAt: new Date().toISOString(),
     };
 
     addNoteToDB(newNote, (err) => {
       if (err) {
-        ui.error("✖ Failed to add note.");
+        ui.error('✖ Failed to add note.');
         return;
       }
 
-      ui.success("✔ Note added successfully!");
+      saveUndo(
+        'add',
+        {
+          note: newNote,
+        },
+        (undoErr) => {
+          if (undoErr) {
+            ui.warning('⚠ Undo history could not be saved.');
+          }
+
+          ui.success('✔ Note added successfully!');
+        }
+      );
     });
   });
 }
@@ -98,18 +116,18 @@ function addNote(
 function listNotes(options = {}) {
   getAllNotes((err, notes) => {
     if (err) {
-      ui.error("✖ Failed to load notes.");
+      ui.error('✖ Failed to load notes.');
       return;
     }
 
     const filtered = filterNotes(notes, options);
     const sorted = sortNotes(filtered, options.sort);
 
-    ui.heading("\nNotes");
+    ui.heading('\nNotes');
     ui.divider();
 
     if (sorted.length === 0) {
-      ui.warning("No notes found.");
+      ui.warning('No notes found.');
       return;
     }
 
@@ -120,42 +138,54 @@ function listNotes(options = {}) {
 function deleteNote(id) {
   getNoteById(Number(id), (err, note) => {
     if (err) {
-      ui.error("✖ Failed to load notes.");
+      ui.error('✖ Failed to load notes.');
       return;
     }
 
     if (!note) {
-      ui.error("✖ Invalid note ID.");
+      ui.error('✖ Invalid note ID.');
       return;
     }
 
     deleteNoteFromDB(Number(id), (err) => {
       if (err) {
-        ui.error("✖ Failed to delete note.");
+        ui.error('✖ Failed to delete note.');
         return;
       }
 
-      ui.success(`✔ Deleted: ${note.text}`);
+      saveUndo(
+        'delete',
+        {
+          note,
+        },
+        (undoErr) => {
+          if (undoErr) {
+            ui.warning('⚠ Undo history could not be saved.');
+          }
+
+          ui.success(`✔ Deleted: ${note.text}`);
+        }
+      );
     });
   });
 }
 
 function updateNote(id, newText) {
   if (!validateText(newText)) {
-    ui.error("✖ Please provide the updated note.");
+    ui.error('✖ Please provide the updated note.');
     return;
   }
 
   getAllNotes((err, notes) => {
     if (err) {
-      ui.error("✖ Failed to load notes.");
+      ui.error('✖ Failed to load notes.');
       return;
     }
 
     const note = notes.find((note) => note.id === Number(id));
 
     if (!note) {
-      ui.error("✖ Invalid note ID.");
+      ui.error('✖ Invalid note ID.');
       return;
     }
 
@@ -166,23 +196,36 @@ function updateNote(id, newText) {
     );
 
     if (exists) {
-      ui.warning("⚠ Note already exists.");
+      ui.warning('⚠ Note already exists.');
       return;
     }
 
     const oldText = note.text;
+    const oldNote = { ...note };
 
     note.text = newText.trim();
 
     updateNoteInDB(note, (err) => {
       if (err) {
-        ui.error("✖ Failed to update note.");
+        ui.error('✖ Failed to update note.');
         return;
       }
 
-      ui.success("✔ Note updated successfully!");
-      console.log(`"${oldText}"`);
-      console.log(`→ "${note.text}"`);
+      saveUndo(
+        'update',
+        {
+          note: oldNote,
+        },
+        (undoErr) => {
+          if (undoErr) {
+            ui.warning('⚠ Undo history could not be saved.');
+          }
+
+          ui.success('✔ Note updated successfully!');
+          console.log(`"${oldText}"`);
+          console.log(`→ "${note.text}"`);
+        }
+      );
     });
   });
 }
@@ -190,19 +233,19 @@ function updateNote(id, newText) {
 function completeNote(id) {
   getAllNotes((err, notes) => {
     if (err) {
-      ui.error("✖ Failed to load notes.");
+      ui.error('✖ Failed to load notes.');
       return;
     }
 
     const note = notes.find((note) => note.id === Number(id));
 
     if (!note) {
-      ui.error("✖ Invalid note ID.");
+      ui.error('✖ Invalid note ID.');
       return;
     }
-
+    const oldNote = { ...note };
     if (note.completed) {
-      ui.warning("⚠ Note is already completed.");
+      ui.warning('⚠ Note is already completed.');
       return;
     }
 
@@ -210,12 +253,25 @@ function completeNote(id) {
 
     updateNoteInDB(note, (err) => {
       if (err) {
-        ui.error("✖ Failed to complete note.");
+        ui.error('✖ Failed to complete note.');
         return;
       }
 
       if (!note.recurrence) {
-        ui.success(`✔ Completed: ${note.text}`);
+        saveUndo(
+          'complete',
+          {
+            note: oldNote,
+          },
+          (undoErr) => {
+            if (undoErr) {
+              ui.warning('⚠ Undo history could not be saved.');
+            }
+
+            ui.success(`✔ Completed: ${note.text}`);
+          }
+        );
+
         return;
       }
 
@@ -227,20 +283,20 @@ function completeNote(id) {
         const date = new Date(note.dueDate);
 
         switch (note.recurrence) {
-          case "daily":
+          case 'daily':
             date.setDate(date.getDate() + 1);
             break;
 
-          case "weekly":
+          case 'weekly':
             date.setDate(date.getDate() + 7);
             break;
 
-          case "monthly":
+          case 'monthly':
             date.setMonth(date.getMonth() + 1);
             break;
         }
 
-        nextDueDate = date.toISOString().split("T")[0];
+        nextDueDate = date.toISOString().split('T')[0];
       }
 
       addNoteToDB(
@@ -252,15 +308,28 @@ function completeNote(id) {
           dueDate: nextDueDate,
           recurrence: note.recurrence,
           completed: false,
+          archived: false,
           createdAt: new Date().toISOString(),
         },
         (err) => {
           if (err) {
-            ui.error("✖ Failed to create recurring note.");
+            ui.error('✖ Failed to create recurring note.');
             return;
           }
 
-          ui.success(`✔ Completed: ${note.text}`);
+          saveUndo(
+            'complete',
+            {
+              note: oldNote,
+            },
+            (undoErr) => {
+              if (undoErr) {
+                ui.warning('⚠ Undo history could not be saved.');
+              }
+
+              ui.success(`✔ Completed: ${note.text}`);
+            }
+          );
         }
       );
     });
@@ -270,12 +339,12 @@ function completeNote(id) {
 function uncompleteNote(id) {
   getNoteById(Number(id), (err, note) => {
     if (err) {
-      ui.error("✖ Failed to load note.");
+      ui.error('✖ Failed to load note.');
       return;
     }
 
     if (!note) {
-      ui.error("✖ Invalid note ID.");
+      ui.error('✖ Invalid note ID.');
       return;
     }
 
@@ -283,7 +352,7 @@ function uncompleteNote(id) {
 
     updateNoteInDB(note, (err) => {
       if (err) {
-        ui.error("✖ Failed to update note.");
+        ui.error('✖ Failed to update note.');
         return;
       }
 
@@ -295,23 +364,23 @@ function uncompleteNote(id) {
 function clearNotes() {
   clearNotesFromDB((err) => {
     if (err) {
-      ui.error("✖ Failed to clear notes.");
+      ui.error('✖ Failed to clear notes.');
       return;
     }
 
-    ui.success("✔ All notes have been deleted.");
+    ui.success('✔ All notes have been deleted.');
   });
 }
 
 function searchNotes(keyword) {
   if (!keyword) {
-    ui.error("✖ Please provide a keyword.");
+    ui.error('✖ Please provide a keyword.');
     return;
   }
 
   getAllNotes((err, notes) => {
     if (err) {
-      ui.error("✖ Failed to load notes.");
+      ui.error('✖ Failed to load notes.');
       return;
     }
 
@@ -319,11 +388,11 @@ function searchNotes(keyword) {
       note.text.toLowerCase().includes(keyword.toLowerCase())
     );
 
-    ui.heading("\nSearch Results");
+    ui.heading('\nSearch Results');
     ui.divider();
 
     if (results.length === 0) {
-      ui.warning("No matching notes found.");
+      ui.warning('No matching notes found.');
       return;
     }
 
@@ -334,7 +403,7 @@ function searchNotes(keyword) {
 function showStats() {
   getAllNotes((err, notes) => {
     if (err) {
-      ui.error("✖ Failed to load notes.");
+      ui.error('✖ Failed to load notes.');
       return;
     }
 
@@ -345,7 +414,7 @@ function showStats() {
     const completionRate =
       total === 0 ? 0 : ((completed / total) * 100).toFixed(2);
 
-    ui.heading("\nNotes Statistics");
+    ui.heading('\nNotes Statistics');
     ui.divider();
 
     console.log(`Total Notes     : ${total}`);
@@ -355,9 +424,122 @@ function showStats() {
   });
 }
 
+function archiveNote(id) {
+  getNoteById(Number(id), (err, note) => {
+    if (err) {
+      ui.error('✖ Failed to load note.');
+      return;
+    }
+
+    if (!note) {
+      ui.error('✖ Invalid note ID.');
+      return;
+    }
+
+    if (note.archived) {
+      ui.warning('⚠ Note is already archived.');
+      return;
+    }
+
+    archiveNoteInDB(Number(id), (err) => {
+      if (err) {
+        ui.error('✖ Failed to archive note.');
+        return;
+      }
+
+      saveUndo(
+        'archive',
+        {
+          note,
+        },
+        (undoErr) => {
+          if (undoErr) {
+            ui.warning('⚠ Undo history could not be saved.');
+          }
+
+          ui.success(`✔ Archived: ${note.text}`);
+        }
+      );
+    });
+  });
+}
+
+function listArchivedNotes() {
+  getArchivedNotes((err, notes) => {
+    if (err) {
+      ui.error('✖ Failed to load archived notes.');
+      return;
+    }
+
+    ui.heading('\nArchived Notes');
+    ui.divider();
+
+    if (notes.length === 0) {
+      ui.warning('No archived notes.');
+      return;
+    }
+
+    printNotes(notes);
+  });
+}
+
+function restoreArchivedNote(id) {
+  getNoteById(Number(id), (err, note) => {
+    if (err) {
+      ui.error('✖ Failed to load note.');
+      return;
+    }
+
+    if (!note) {
+      ui.error('✖ Invalid note ID.');
+      return;
+    }
+
+    if (!note.archived) {
+      ui.warning('⚠ Note is not archived.');
+      return;
+    }
+
+    restoreArchivedNoteInDB(Number(id), (err) => {
+      if (err) {
+        ui.error('✖ Failed to restore note.');
+        return;
+      }
+
+      saveUndo(
+        'restore',
+        {
+          note,
+        },
+        (undoErr) => {
+          if (undoErr) {
+            ui.warning('⚠ Undo history could not be saved.');
+          }
+
+          ui.success(`✔ Restored: ${note.text}`);
+        }
+      );
+    });
+  });
+}
+
+function clearArchivedNotes() {
+  clearArchivedNotesFromDB((err) => {
+    if (err) {
+      ui.error('✖ Failed to clear archived notes.');
+      return;
+    }
+
+    ui.success('✔ Archived notes cleared.');
+  });
+}
 module.exports = {
   addNote,
   listNotes,
+  archiveNote,
+  listArchivedNotes,
+  restoreArchivedNote,
+  clearArchivedNotes,
   deleteNote,
   updateNote,
   completeNote,

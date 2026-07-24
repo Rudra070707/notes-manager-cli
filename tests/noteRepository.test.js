@@ -1,39 +1,45 @@
 const {
   addNote,
   getAllNotes,
+  getArchivedNotes,
   getNoteById,
   updateNote,
+  archiveNote,
+  restoreArchivedNote,
+  clearArchivedNotes,
   deleteNote,
   clearNotes,
-} = require("../database/noteRepository");
+} = require('../database/noteRepository');
 
-describe("Note Repository", () => {
+describe('Note Repository', () => {
   const sampleNote = {
     id: 1,
-    text: "Learn Jest",
-    priority: "medium",
-    tags: ["node", "testing"],
+    text: 'Learn Jest',
+    priority: 'medium',
+    tags: ['node', 'testing'],
     dueDate: null,
     recurrence: null,
     completed: false,
+    archived: false,
     createdAt: new Date().toISOString(),
   };
 
-  test("should add a note", (done) => {
+  test('should add a note', (done) => {
     addNote(sampleNote, (err) => {
       expect(err).toBeNull();
 
       getAllNotes((err, notes) => {
         expect(err).toBeNull();
         expect(notes).toHaveLength(1);
-        expect(notes[0].text).toBe("Learn Jest");
+        expect(notes[0].text).toBe('Learn Jest');
         expect(notes[0].completed).toBe(false);
+        expect(notes[0].archived).toBe(false);
         done();
       });
     });
   });
 
-  test("should get note by id", (done) => {
+  test('should get note by id', (done) => {
     addNote(sampleNote, (err) => {
       expect(err).toBeNull();
 
@@ -41,20 +47,20 @@ describe("Note Repository", () => {
         expect(err).toBeNull();
         expect(note).not.toBeNull();
         expect(note.id).toBe(1);
-        expect(note.text).toBe("Learn Jest");
+        expect(note.text).toBe('Learn Jest');
         done();
       });
     });
   });
 
-  test("should update a note", (done) => {
+  test('should update a note', (done) => {
     addNote(sampleNote, (err) => {
       expect(err).toBeNull();
 
       const updatedNote = {
         ...sampleNote,
-        text: "Updated Note",
-        priority: "high",
+        text: 'Updated Note',
+        priority: 'high',
         completed: true,
       };
 
@@ -63,8 +69,8 @@ describe("Note Repository", () => {
 
         getNoteById(1, (err, note) => {
           expect(err).toBeNull();
-          expect(note.text).toBe("Updated Note");
-          expect(note.priority).toBe("high");
+          expect(note.text).toBe('Updated Note');
+          expect(note.priority).toBe('high');
           expect(note.completed).toBe(true);
           done();
         });
@@ -72,7 +78,50 @@ describe("Note Repository", () => {
     });
   });
 
-  test("should delete a note", (done) => {
+  test('should archive a note', (done) => {
+    addNote(sampleNote, (err) => {
+      expect(err).toBeNull();
+
+      archiveNote(1, (err) => {
+        expect(err).toBeNull();
+
+        getArchivedNotes((err, notes) => {
+          expect(err).toBeNull();
+          expect(notes).toHaveLength(1);
+          expect(notes[0].archived).toBe(true);
+          done();
+        });
+      });
+    });
+  });
+
+  test('should restore an archived note', (done) => {
+    addNote(sampleNote, (err) => {
+      expect(err).toBeNull();
+
+      archiveNote(1, (err) => {
+        expect(err).toBeNull();
+
+        restoreArchivedNote(1, (err) => {
+          expect(err).toBeNull();
+
+          getArchivedNotes((err, notes) => {
+            expect(err).toBeNull();
+            expect(notes).toHaveLength(0);
+
+            getAllNotes((err, activeNotes) => {
+              expect(err).toBeNull();
+              expect(activeNotes).toHaveLength(1);
+              expect(activeNotes[0].archived).toBe(false);
+              done();
+            });
+          });
+        });
+      });
+    });
+  });
+
+  test('should delete a note', (done) => {
     addNote(sampleNote, (err) => {
       expect(err).toBeNull();
 
@@ -88,7 +137,27 @@ describe("Note Repository", () => {
     });
   });
 
-  test("should clear all notes", (done) => {
+  test('should clear archived notes', (done) => {
+    addNote(sampleNote, (err) => {
+      expect(err).toBeNull();
+
+      archiveNote(1, (err) => {
+        expect(err).toBeNull();
+
+        clearArchivedNotes((err) => {
+          expect(err).toBeNull();
+
+          getArchivedNotes((err, notes) => {
+            expect(err).toBeNull();
+            expect(notes).toHaveLength(0);
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  test('should clear all notes', (done) => {
     addNote(sampleNote, (err) => {
       expect(err).toBeNull();
 
