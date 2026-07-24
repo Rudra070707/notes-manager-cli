@@ -21,6 +21,7 @@ const ui = require('../ui/colors');
 const { printNotes } = require('../ui/table');
 const { validateText } = require('../validators/textValidator');
 const { saveUndo } = require('../database/undoRepository');
+const logger = require('./loggerService');
 function addNote(
   text,
   priority = 'medium',
@@ -106,6 +107,8 @@ function addNote(
             ui.warning('⚠ Undo history could not be saved.');
           }
 
+          logger.log('ADD', newNote.text);
+
           ui.success('✔ Note added successfully!');
         }
       );
@@ -163,6 +166,8 @@ function deleteNote(id) {
             ui.warning('⚠ Undo history could not be saved.');
           }
 
+          logger.log('DELETE', note.text);
+
           ui.success(`✔ Deleted: ${note.text}`);
         }
       );
@@ -214,13 +219,14 @@ function updateNote(id, newText) {
       saveUndo(
         'update',
         {
-          note: oldNote,
+          oldNote,
+          newNote: note,
         },
         (undoErr) => {
           if (undoErr) {
             ui.warning('⚠ Undo history could not be saved.');
           }
-
+          logger.log('UPDATE', `${oldNote.text} -> ${note.text}`);
           ui.success('✔ Note updated successfully!');
           console.log(`"${oldText}"`);
           console.log(`→ "${note.text}"`);
@@ -267,6 +273,8 @@ function completeNote(id) {
             if (undoErr) {
               ui.warning('⚠ Undo history could not be saved.');
             }
+
+            logger.log('COMPLETE', note.text);
 
             ui.success(`✔ Completed: ${note.text}`);
           }
@@ -326,7 +334,7 @@ function completeNote(id) {
               if (undoErr) {
                 ui.warning('⚠ Undo history could not be saved.');
               }
-
+              logger.log('COMPLETE', note.text);
               ui.success(`✔ Completed: ${note.text}`);
             }
           );
@@ -355,7 +363,7 @@ function uncompleteNote(id) {
         ui.error('✖ Failed to update note.');
         return;
       }
-
+      logger.log('UNCOMPLETE', note.text);
       ui.success(`✔ Marked as pending: ${note.text}`);
     });
   });
@@ -457,6 +465,8 @@ function archiveNote(id) {
             ui.warning('⚠ Undo history could not be saved.');
           }
 
+          logger.log('ARCHIVE', note.text);
+
           ui.success(`✔ Archived: ${note.text}`);
         }
       );
@@ -515,6 +525,8 @@ function restoreArchivedNote(id) {
           if (undoErr) {
             ui.warning('⚠ Undo history could not be saved.');
           }
+
+          logger.log('RESTORE', note.text);
 
           ui.success(`✔ Restored: ${note.text}`);
         }

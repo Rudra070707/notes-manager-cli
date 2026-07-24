@@ -1,4 +1,5 @@
 const ui = require('../ui/colors');
+const logger = require('./loggerService');
 
 const { getLastUndo, deleteLastUndo } = require('../database/undoRepository');
 
@@ -23,6 +24,7 @@ function undoLastOperation() {
     }
 
     const note = undo.payload.note;
+    logger.log('UNDO', undo.operation);
 
     if (undo.operation === 'add') {
       deleteNoteFromDB(note.id, (err) => {
