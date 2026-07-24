@@ -20,6 +20,10 @@ const exportCommand = require('./commands/export');
 const importCommand = require('./commands/import');
 const help = require('./commands/help');
 
+const backup = require('./commands/backup');
+const backups = require('./commands/backups');
+const restoreBackup = require('./commands/restoreBackup');
+
 const program = new Command();
 
 program
@@ -159,6 +163,31 @@ program
   .description('Import notes (json)')
   .action((format, file) => {
     importCommand(format, file);
+  });
+
+/* ==========================
+   BACKUP & RESTORE COMMANDS
+========================== */
+
+program
+  .command('backup')
+  .description('Create a database backup')
+  .action(() => {
+    backup();
+  });
+
+program
+  .command('backups')
+  .description('List all available backups')
+  .action(() => {
+    backups();
+  });
+
+program
+  .command('restore-db <backupFile>')
+  .description('Restore database from a backup')
+  .action((backupFile) => {
+    restoreBackup([backupFile]);
   });
 
 program
