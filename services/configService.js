@@ -1,4 +1,5 @@
 const repository = require('../database/configRepository');
+const validator = require('./configValidator');
 const ui = require('../ui/colors');
 
 function listConfig() {
@@ -31,11 +32,17 @@ function setValue(key, value) {
     return;
   }
 
-  config[key] = value;
+  try {
+    const parsedValue = validator.parseValue(key, value);
 
-  repository.saveConfig(config);
+    config[key] = parsedValue;
 
-  ui.success(`✔ ${key} updated successfully.`);
+    repository.saveConfig(config);
+
+    ui.success(`✔ ${key} updated successfully.`);
+  } catch (error) {
+    ui.error(`✖ ${error.message}`);
+  }
 }
 
 function resetConfig() {
