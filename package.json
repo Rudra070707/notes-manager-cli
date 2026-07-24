@@ -25,9 +25,6 @@
     ],
     "*.{json,md,yml,yaml}": [
       "prettier --write"
-    ],
-    "*.{gitattributes,gitignore,prettierignore,editorconfig}": [
-      "prettier --write"
     ]
   },
   "keywords": [
