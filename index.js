@@ -30,7 +30,7 @@ const security = require('./commands/security');
 const backup = require('./commands/backup');
 const backups = require('./commands/backups');
 const restoreBackup = require('./commands/restoreBackup');
-
+const categoryCommand = require('./commands/category');
 const config = require('./commands/config');
 
 const program = new Command();
@@ -60,6 +60,7 @@ program
   .option('-s, --sort <type>', 'created | priority | status | due')
   .option('-p, --priority <priority>', 'low | medium | high')
   .option('-t, --tag <tag>', 'Filter by tag')
+  .option('--category <category>', 'Filter by category')
   .option('-c, --completed', 'Show completed notes')
   .option('--pending', 'Show pending notes')
   .option('--today', 'Show notes due today')
@@ -262,5 +263,5 @@ program
   .action(() => {
     help();
   });
-
+program.addCommand(categoryCommand);
 program.parse();

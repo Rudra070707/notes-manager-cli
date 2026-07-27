@@ -12,6 +12,7 @@ const {
   addNote: addNoteToDB,
   addNoteDirect,
   updateNote: updateNoteInDB,
+  setCategory: setCategoryInDB,
   archiveNote: archiveNoteInDB,
   restoreArchivedNote: restoreArchivedNoteInDB,
   clearArchivedNotes: clearArchivedNotesFromDB,
@@ -99,6 +100,7 @@ function addNote(
       is_trashed: false,
       is_locked: false,
       is_pinned: false,
+      category: 'General',
       createdAt: new Date().toISOString(),
     };
 
@@ -346,6 +348,7 @@ function completeNote(id) {
           is_trashed: false,
           is_locked: false,
           is_pinned: false,
+          category: note.category || 'General',
           createdAt: new Date().toISOString(),
         },
         (err) => {
@@ -815,6 +818,57 @@ function unpinNote(id) {
     });
   });
 }
+function setCategory(id, category) {
+  if (!category || !category.trim()) {
+    ui.error('✖ Please provide a category.');
+    return;
+  }
+
+  getNoteById(Number(id), (err, note) => {
+    if (err) {
+      ui.error('✖ Failed to load note.');
+      return;
+    }
+
+    if (!note) {
+      ui.error('✖ Invalid note ID.');
+      return;
+    }
+
+    if (note.is_locked) {
+      ui.warning('⚠ Note is locked.');
+      return;
+    }
+
+    const oldNote = { ...note };
+
+    setCategoryInDB(Number(id), category.trim(), (err) => {
+      if (err) {
+        ui.error('✖ Failed to update category.');
+        return;
+      }
+
+      note.category = category.trim();
+
+      saveUndo(
+        'category',
+        {
+          oldNote,
+          newNote: note,
+        },
+        (undoErr) => {
+          if (undoErr) {
+            ui.warning('⚠ Undo history could not be saved.');
+          }
+
+          logger.log('CATEGORY', `${note.text} -> ${category.trim()}`);
+
+          ui.success(`✔ Category changed to: ${category.trim()}`);
+        }
+      );
+    });
+  });
+}
 module.exports = {
   addNote,
   listNotes,
@@ -829,6 +883,7 @@ module.exports = {
   unlockNote,
   pinNote,
   unpinNote,
+  setCategory,
   deleteNote,
   updateNote,
   completeNote,

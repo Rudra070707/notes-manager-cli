@@ -3,7 +3,7 @@ function filterNotes(notes, options = {}) {
 
   if (options.priority) {
     filtered = filtered.filter(
-      (note) => (note.priority || "medium") === options.priority.toLowerCase()
+      (note) => (note.priority || 'medium') === options.priority.toLowerCase()
     );
   }
 
@@ -12,7 +12,13 @@ function filterNotes(notes, options = {}) {
 
     filtered = filtered.filter((note) => (note.tags || []).includes(tag));
   }
+  if (options.category) {
+    const category = options.category.toLowerCase();
 
+    filtered = filtered.filter(
+      (note) => (note.category || 'General').toLowerCase() === category
+    );
+  }
   if (options.completed) {
     filtered = filtered.filter((note) => note.completed);
   }

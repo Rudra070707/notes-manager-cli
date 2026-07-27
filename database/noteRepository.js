@@ -9,6 +9,7 @@ function formatNote(note) {
     is_locked: Boolean(note.is_locked),
     is_pinned: Boolean(note.is_pinned),
     tags: note.tags ? JSON.parse(note.tags) : [],
+    category: note.category || 'General',
   };
 }
 
@@ -96,11 +97,14 @@ function addNote(note, callback) {
       completed,
       archived,
       is_trashed,
-      is_locked,
-      is_pinned,
-      createdAt
+is_locked,
+is_pinned,
+category,
+createdAt
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (
+  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+)
     `,
     [
       note.id,
@@ -114,6 +118,7 @@ function addNote(note, callback) {
       note.is_trashed ? 1 : 0,
       note.is_locked ? 1 : 0,
       note.is_pinned ? 1 : 0,
+      note.category || 'General',
       note.createdAt,
     ],
     callback
@@ -134,11 +139,14 @@ function addNoteDirect(note, callback) {
       completed,
       archived,
       is_trashed,
-      is_locked,
-      is_pinned,
-      createdAt
+is_locked,
+is_pinned,
+category,
+createdAt
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (
+  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+)
     `,
     [
       note.id,
@@ -152,6 +160,7 @@ function addNoteDirect(note, callback) {
       note.is_trashed ? 1 : 0,
       note.is_locked ? 1 : 0,
       note.is_pinned ? 1 : 0,
+      note.category || 'General',
       note.createdAt,
     ],
     callback
@@ -168,8 +177,9 @@ function updateNote(note, callback) {
       tags = ?,
       dueDate = ?,
       recurrence = ?,
-      completed = ?
-    WHERE id = ?
+completed = ?,
+category = ?
+WHERE id = ?
     `,
     [
       note.text,
@@ -178,12 +188,23 @@ function updateNote(note, callback) {
       note.dueDate,
       note.recurrence,
       note.completed ? 1 : 0,
+      note.category || 'General',
       note.id,
     ],
     callback
   );
 }
-
+function setCategory(id, category, callback) {
+  db.run(
+    `
+    UPDATE notes
+    SET category = ?
+    WHERE id = ?
+    `,
+    [category, id],
+    callback
+  );
+}
 function archiveNote(id, callback) {
   db.run('UPDATE notes SET archived = 1 WHERE id = ?', [id], callback);
 }
@@ -240,6 +261,7 @@ module.exports = {
   addNote,
   addNoteDirect,
   updateNote,
+  setCategory,
   archiveNote,
   restoreArchivedNote,
   clearArchivedNotes,

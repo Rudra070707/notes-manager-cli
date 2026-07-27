@@ -1,9 +1,9 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
 
-const repository = require("../database/noteRepository");
+const repository = require('../database/noteRepository');
 
-const EXPORT_DIRECTORY = path.join(__dirname, "..", "exports");
+const EXPORT_DIRECTORY = path.join(__dirname, '..', 'exports');
 
 function ensureExportDirectory() {
   if (!fs.existsSync(EXPORT_DIRECTORY)) {
@@ -15,33 +15,33 @@ function createTimestamp() {
   const now = new Date();
 
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  const hour = String(now.getHours()).padStart(2, "0");
-  const minute = String(now.getMinutes()).padStart(2, "0");
-  const second = String(now.getSeconds()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hour = String(now.getHours()).padStart(2, '0');
+  const minute = String(now.getMinutes()).padStart(2, '0');
+  const second = String(now.getSeconds()).padStart(2, '0');
 
   return `${year}-${month}-${day}_${hour}-${minute}-${second}`;
 }
 
 function getExporter(format) {
   switch (format.toLowerCase()) {
-    case "json":
+    case 'json':
       return {
-        extension: "json",
+        extension: 'json',
         exporter: exportJson,
       };
 
-    case "csv":
+    case 'csv':
       return {
-        extension: "csv",
+        extension: 'csv',
         exporter: exportCsv,
       };
 
-    case "md":
-    case "markdown":
+    case 'md':
+    case 'markdown':
       return {
-        extension: "md",
+        extension: 'md',
         exporter: exportMarkdown,
       };
 
@@ -51,43 +51,49 @@ function getExporter(format) {
 }
 
 function exportJson(notes, filePath) {
-  fs.writeFileSync(filePath, JSON.stringify(notes, null, 2), "utf8");
+  ensureExportDirectory();
+
+  fs.writeFileSync(filePath, JSON.stringify(notes, null, 2), 'utf8');
 }
 
 function exportCsv(notes, filePath) {
-  const header = "id,text,priority,tags,dueDate,recurrence,completed,createdAt";
+  ensureExportDirectory();
+
+  const header = 'id,text,priority,tags,dueDate,recurrence,completed,createdAt';
 
   const rows = notes.map((note) => {
     return [
       note.id,
       `"${String(note.text).replace(/"/g, '""')}"`,
       note.priority,
-      `"${note.tags.join(";")}"`,
-      note.dueDate || "",
-      note.recurrence || "",
+      `"${note.tags.join(';')}"`,
+      note.dueDate || '',
+      note.recurrence || '',
       note.completed,
       note.createdAt,
-    ].join(",");
+    ].join(',');
   });
 
-  fs.writeFileSync(filePath, [header, ...rows].join("\n"), "utf8");
+  fs.writeFileSync(filePath, [header, ...rows].join('\n'), 'utf8');
 }
 
 function exportMarkdown(notes, filePath) {
-  let output = "# Notes\n\n";
+  ensureExportDirectory();
+
+  let output = '# Notes\n\n';
 
   notes.forEach((note) => {
     output += `## ${note.text}\n`;
     output += `- ID: ${note.id}\n`;
     output += `- Priority: ${note.priority}\n`;
     output += `- Completed: ${note.completed}\n`;
-    output += `- Due Date: ${note.dueDate || "-"}\n`;
-    output += `- Recurrence: ${note.recurrence || "-"}\n`;
-    output += `- Tags: ${note.tags.join(", ") || "-"}\n`;
+    output += `- Due Date: ${note.dueDate || '-'}\n`;
+    output += `- Recurrence: ${note.recurrence || '-'}\n`;
+    output += `- Tags: ${note.tags.join(', ') || '-'}\n`;
     output += `- Created: ${note.createdAt}\n\n`;
   });
 
-  fs.writeFileSync(filePath, output, "utf8");
+  fs.writeFileSync(filePath, output, 'utf8');
 }
 
 function exportNotes(format) {
@@ -95,15 +101,14 @@ function exportNotes(format) {
 
   repository.getAllNotes((err, notes) => {
     if (err) {
-      console.error("Error:", err.message);
+      console.error('Error:', err.message);
       return;
     }
 
-    // Use exported function so Jest can mock it later
     const exportConfig = module.exports.getExporter(format);
 
     if (!exportConfig) {
-      console.log("Unsupported export format.");
+      console.log('Unsupported export format.');
       return;
     }
 

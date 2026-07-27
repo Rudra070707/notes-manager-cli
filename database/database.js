@@ -28,9 +28,10 @@ db.serialize(() => {
       completed INTEGER NOT NULL DEFAULT 0,
       archived INTEGER NOT NULL DEFAULT 0,
       is_trashed INTEGER NOT NULL DEFAULT 0,
-      is_locked INTEGER NOT NULL DEFAULT 0,
-      is_pinned INTEGER NOT NULL DEFAULT 0,
-      createdAt TEXT NOT NULL
+is_locked INTEGER NOT NULL DEFAULT 0,
+is_pinned INTEGER NOT NULL DEFAULT 0,
+category TEXT NOT NULL DEFAULT 'General',
+createdAt TEXT NOT NULL
     )
   `);
 
@@ -110,6 +111,20 @@ db.serialize(() => {
             console.error(alterErr.message);
           } else {
             console.log('✔ Database migrated: is_pinned column added.');
+          }
+        }
+      );
+    }
+    const hasCategory = columns.some((column) => column.name === 'category');
+
+    if (!hasCategory) {
+      db.run(
+        "ALTER TABLE notes ADD COLUMN category TEXT NOT NULL DEFAULT 'General'",
+        (alterErr) => {
+          if (alterErr) {
+            console.error(alterErr.message);
+          } else {
+            console.log('✔ Database migrated: category column added.');
           }
         }
       );
