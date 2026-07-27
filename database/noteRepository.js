@@ -205,6 +205,17 @@ function setCategory(id, category, callback) {
     callback
   );
 }
+function renameCategory(oldCategory, newCategory, callback) {
+  db.run(
+    `
+    UPDATE notes
+    SET category = ?
+    WHERE LOWER(category) = LOWER(?)
+    `,
+    [newCategory, oldCategory],
+    callback
+  );
+}
 function archiveNote(id, callback) {
   db.run('UPDATE notes SET archived = 1 WHERE id = ?', [id], callback);
 }
@@ -252,7 +263,22 @@ function deleteNote(id, callback) {
 function clearNotes(callback) {
   db.run('DELETE FROM notes', [], callback);
 }
-
+function getCategories(callback) {
+  db.all(
+    `
+    SELECT
+      category,
+      COUNT(*) AS count
+    FROM notes
+    WHERE archived = 0
+      AND is_trashed = 0
+    GROUP BY category
+    ORDER BY category ASC
+    `,
+    [],
+    callback
+  );
+}
 module.exports = {
   getAllNotes,
   getArchivedNotes,
@@ -262,6 +288,8 @@ module.exports = {
   addNoteDirect,
   updateNote,
   setCategory,
+  renameCategory,
+  getCategories,
   archiveNote,
   restoreArchivedNote,
   clearArchivedNotes,

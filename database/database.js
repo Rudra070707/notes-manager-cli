@@ -1,7 +1,28 @@
+const fs = require('fs');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
-const dbPath = path.join(__dirname, '..', 'data', 'notes.db');
+// ======================================================
+// Database Selection
+// ======================================================
+
+const dataDir = path.join(__dirname, '..', 'data');
+
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+const isTest =
+  process.env.NODE_ENV === 'test' ||
+  process.argv.some((arg) => arg.includes('jest'));
+
+const dbFile = isTest ? 'test-notes.db' : 'notes.db';
+
+const dbPath = path.join(dataDir, dbFile);
+
+// ======================================================
+// SQLite Connection
+// ======================================================
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
@@ -10,13 +31,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
     process.exit(1);
   }
 
-  console.log('✔ Connected to SQLite database.');
+  console.log(`✔ Connected to SQLite database (${dbFile}).`);
 });
 
+// ======================================================
+// Database Initialization
+// ======================================================
+
 db.serialize(() => {
-  // =========================
-  // Notes Table
-  // =========================
   db.run(`
     CREATE TABLE IF NOT EXISTS notes (
       id INTEGER PRIMARY KEY,
@@ -28,16 +50,13 @@ db.serialize(() => {
       completed INTEGER NOT NULL DEFAULT 0,
       archived INTEGER NOT NULL DEFAULT 0,
       is_trashed INTEGER NOT NULL DEFAULT 0,
-is_locked INTEGER NOT NULL DEFAULT 0,
-is_pinned INTEGER NOT NULL DEFAULT 0,
-category TEXT NOT NULL DEFAULT 'General',
-createdAt TEXT NOT NULL
+      is_locked INTEGER NOT NULL DEFAULT 0,
+      is_pinned INTEGER NOT NULL DEFAULT 0,
+      category TEXT NOT NULL DEFAULT 'General',
+      createdAt TEXT NOT NULL
     )
   `);
 
-  // =========================
-  // Undo History Table
-  // =========================
   db.run(`
     CREATE TABLE IF NOT EXISTS undo_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,9 +66,6 @@ createdAt TEXT NOT NULL
     )
   `);
 
-  // =========================
-  // Database Migrations
-  // =========================
   db.all('PRAGMA table_info(notes)', (err, columns) => {
     if (err) {
       console.error(err.message);
@@ -115,6 +131,7 @@ createdAt TEXT NOT NULL
         }
       );
     }
+
     const hasCategory = columns.some((column) => column.name === 'category');
 
     if (!hasCategory) {

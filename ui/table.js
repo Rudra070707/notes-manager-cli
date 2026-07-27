@@ -2,8 +2,17 @@ const Table = require('cli-table3');
 
 function printNotes(notes) {
   const table = new Table({
-    head: ['ID', 'Status', 'Priority', 'Due Date', 'Repeat', 'Tags', 'Note'],
-    colWidths: [6, 15, 12, 15, 12, 20, 35],
+    head: [
+      'ID',
+      'Status',
+      'Priority',
+      'Category',
+      'Due Date',
+      'Repeat',
+      'Tags',
+      'Note',
+    ],
+    colWidths: [6, 15, 12, 15, 15, 12, 20, 35],
     wordWrap: true,
   });
 
@@ -12,6 +21,7 @@ function printNotes(notes) {
       note.id,
       note.completed ? '✓ Done' : '○ Pending',
       (note.priority || 'medium').toUpperCase(),
+      note.category || 'General',
       note.dueDate || '-',
       note.recurrence ? note.recurrence.toUpperCase() : '-',
       (note.tags || []).join(', '),

@@ -31,6 +31,8 @@ const backup = require('./commands/backup');
 const backups = require('./commands/backups');
 const restoreBackup = require('./commands/restoreBackup');
 const categoryCommand = require('./commands/category');
+const categories = require('./commands/categories');
+const renameCategory = require('./commands/renameCategory');
 const config = require('./commands/config');
 
 const program = new Command();
@@ -44,6 +46,7 @@ program
   .command('add <text>')
   .description('Add a new note')
   .option('-p, --priority <priority>', 'low | medium | high')
+  .option('--category <category>', 'Category name')
   .option('-t, --tag <tags>', 'Comma-separated tags')
   .option('-d, --due <date>', 'Due date (YYYY-MM-DD)')
   .option('--daily', 'Repeat every day')
@@ -262,6 +265,18 @@ program
   .description('Show your custom help')
   .action(() => {
     help();
+  });
+program
+  .command('categories')
+  .description('List all categories')
+  .action(() => {
+    categories();
+  });
+program
+  .command('rename-category <oldCategory> <newCategory>')
+  .description('Rename a category')
+  .action((oldCategory, newCategory) => {
+    renameCategory([oldCategory, newCategory]);
   });
 program.addCommand(categoryCommand);
 program.parse();

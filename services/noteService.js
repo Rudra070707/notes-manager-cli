@@ -13,6 +13,8 @@ const {
   addNoteDirect,
   updateNote: updateNoteInDB,
   setCategory: setCategoryInDB,
+  renameCategory: renameCategoryInDB,
+  getCategories,
   archiveNote: archiveNoteInDB,
   restoreArchivedNote: restoreArchivedNoteInDB,
   clearArchivedNotes: clearArchivedNotesFromDB,
@@ -36,7 +38,8 @@ function addNote(
   priority = 'medium',
   tag = '',
   dueDate = null,
-  recurrence = null
+  recurrence = null,
+  category = 'General'
 ) {
   if (!validateText(text)) {
     ui.error('✖ Please provide a note.');
@@ -100,7 +103,7 @@ function addNote(
       is_trashed: false,
       is_locked: false,
       is_pinned: false,
-      category: 'General',
+      category: category?.trim() || 'General',
       createdAt: new Date().toISOString(),
     };
 
@@ -464,6 +467,74 @@ function showStats() {
     console.log(`Completed Notes : ${completed}`);
     console.log(`Pending Notes   : ${pending}`);
     console.log(`Completion Rate : ${completionRate}%`);
+  });
+}
+function listCategories() {
+  getCategories((err, categories) => {
+    if (err) {
+      ui.error('✖ Failed to load categories.');
+      return;
+    }
+
+    ui.heading('\nCategories');
+    ui.divider();
+
+    if (categories.length === 0) {
+      ui.warning('No categories found.');
+      return;
+    }
+
+    categories.forEach(({ category, count }) => {
+      console.log(`${category || 'General'} (${count})`);
+    });
+  });
+}
+function renameCategory(oldCategory, newCategory) {
+  if (!oldCategory || !oldCategory.trim()) {
+    ui.error('✖ Please provide the current category.');
+    return;
+  }
+
+  if (!newCategory || !newCategory.trim()) {
+    ui.error('✖ Please provide the new category.');
+    return;
+  }
+
+  if (oldCategory.trim().toLowerCase() === newCategory.trim().toLowerCase()) {
+    ui.warning('⚠ Categories are the same.');
+    return;
+  }
+
+  getCategories((err, categories) => {
+    if (err) {
+      ui.error('✖ Failed to load categories.');
+      return;
+    }
+
+    const exists = categories.some(
+      (c) =>
+        c.category &&
+        c.category.toLowerCase() === oldCategory.trim().toLowerCase()
+    );
+
+    if (!exists) {
+      ui.warning('⚠ Category not found.');
+      return;
+    }
+
+    renameCategoryInDB(oldCategory.trim(), newCategory.trim(), (err) => {
+      if (err) {
+        ui.error('✖ Failed to rename category.');
+        return;
+      }
+
+      logger.log(
+        'RENAME_CATEGORY',
+        `${oldCategory.trim()} -> ${newCategory.trim()}`
+      );
+
+      ui.success(`✔ Category renamed to: ${newCategory.trim()}`);
+    });
   });
 }
 
@@ -872,6 +943,8 @@ function setCategory(id, category) {
 module.exports = {
   addNote,
   listNotes,
+  listCategories,
+  renameCategory,
   archiveNote,
   listArchivedNotes,
   listTrashedNotes,
