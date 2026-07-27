@@ -15,11 +15,18 @@ const archive = require('./commands/archive');
 const archived = require('./commands/archived');
 const restore = require('./commands/restore');
 const clearArchived = require('./commands/clearArchived');
+const trash = require('./commands/trash');
+const restoreTrash = require('./commands/restoreTrash');
+const emptyTrash = require('./commands/emptyTrash');
+const lock = require('./commands/lock');
+const unlock = require('./commands/unlock');
+const pin = require('./commands/pin');
+const unpin = require('./commands/unpin');
 const stats = require('./commands/stats');
 const exportCommand = require('./commands/export');
 const importCommand = require('./commands/import');
 const help = require('./commands/help');
-
+const security = require('./commands/security');
 const backup = require('./commands/backup');
 const backups = require('./commands/backups');
 const restoreBackup = require('./commands/restoreBackup');
@@ -129,7 +136,48 @@ program
   .action(() => {
     archived([]);
   });
-
+program
+  .command('trash')
+  .description('List all trashed notes')
+  .action(() => {
+    trash();
+  });
+program
+  .command('restore-trash <id>')
+  .description('Restore a note from Trash')
+  .action((id) => {
+    restoreTrash([id]);
+  });
+program
+  .command('empty-trash')
+  .description('Permanently delete all trashed notes')
+  .action(() => {
+    emptyTrash();
+  });
+program
+  .command('lock <id>')
+  .description('Lock a note')
+  .action((id) => {
+    lock([id]);
+  });
+program
+  .command('pin <id>')
+  .description('Pin a note')
+  .action((id) => {
+    pin(id);
+  });
+program
+  .command('unlock <id>')
+  .description('Unlock a note')
+  .action((id) => {
+    unlock([id]);
+  });
+program
+  .command('unpin <id>')
+  .description('Unpin a note')
+  .action((id) => {
+    unpin(id);
+  });
 program
   .command('restore <id>')
   .alias('res')
@@ -202,7 +250,12 @@ program
   .action((action, key, value) => {
     config([action, key, value]);
   });
-
+program
+  .command('security <action>')
+  .description('Manage CLI security')
+  .action((action) => {
+    security([action]);
+  });
 program
   .command('help-custom')
   .description('Show your custom help')

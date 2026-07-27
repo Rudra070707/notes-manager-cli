@@ -5,13 +5,25 @@ function formatNote(note) {
     ...note,
     completed: Boolean(note.completed),
     archived: Boolean(note.archived),
+    is_trashed: Boolean(note.is_trashed),
+    is_locked: Boolean(note.is_locked),
+    is_pinned: Boolean(note.is_pinned),
     tags: note.tags ? JSON.parse(note.tags) : [],
   };
 }
 
 function getAllNotes(callback) {
   db.all(
-    'SELECT * FROM notes WHERE archived = 0 ORDER BY id ASC',
+    `
+    SELECT *
+    FROM notes
+    WHERE archived = 0
+      AND is_trashed = 0
+    ORDER BY
+      is_pinned DESC,
+      priority DESC,
+      id ASC
+    `,
     [],
     (err, rows) => {
       if (err) return callback(err);
@@ -23,7 +35,36 @@ function getAllNotes(callback) {
 
 function getArchivedNotes(callback) {
   db.all(
-    'SELECT * FROM notes WHERE archived = 1 ORDER BY id ASC',
+    `
+    SELECT *
+    FROM notes
+    WHERE archived = 1
+      AND is_trashed = 0
+    ORDER BY
+      is_pinned DESC,
+      priority DESC,
+      id ASC
+    `,
+    [],
+    (err, rows) => {
+      if (err) return callback(err);
+
+      callback(null, rows.map(formatNote));
+    }
+  );
+}
+
+function getTrashedNotes(callback) {
+  db.all(
+    `
+    SELECT *
+    FROM notes
+    WHERE is_trashed = 1
+    ORDER BY
+      is_pinned DESC,
+      priority DESC,
+      id ASC
+    `,
     [],
     (err, rows) => {
       if (err) return callback(err);
@@ -54,9 +95,12 @@ function addNote(note, callback) {
       recurrence,
       completed,
       archived,
+      is_trashed,
+      is_locked,
+      is_pinned,
       createdAt
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       note.id,
@@ -67,11 +111,15 @@ function addNote(note, callback) {
       note.recurrence,
       note.completed ? 1 : 0,
       note.archived ? 1 : 0,
+      note.is_trashed ? 1 : 0,
+      note.is_locked ? 1 : 0,
+      note.is_pinned ? 1 : 0,
       note.createdAt,
     ],
     callback
   );
 }
+
 function addNoteDirect(note, callback) {
   db.run(
     `
@@ -85,9 +133,12 @@ function addNoteDirect(note, callback) {
       recurrence,
       completed,
       archived,
+      is_trashed,
+      is_locked,
+      is_pinned,
       createdAt
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       note.id,
@@ -98,11 +149,15 @@ function addNoteDirect(note, callback) {
       note.recurrence,
       note.completed ? 1 : 0,
       note.archived ? 1 : 0,
+      note.is_trashed ? 1 : 0,
+      note.is_locked ? 1 : 0,
+      note.is_pinned ? 1 : 0,
       note.createdAt,
     ],
     callback
   );
 }
+
 function updateNote(note, callback) {
   db.run(
     `
@@ -141,6 +196,34 @@ function clearArchivedNotes(callback) {
   db.run('DELETE FROM notes WHERE archived = 1', [], callback);
 }
 
+function moveToTrash(id, callback) {
+  db.run('UPDATE notes SET is_trashed = 1 WHERE id = ?', [id], callback);
+}
+
+function restoreFromTrash(id, callback) {
+  db.run('UPDATE notes SET is_trashed = 0 WHERE id = ?', [id], callback);
+}
+
+function emptyTrash(callback) {
+  db.run('DELETE FROM notes WHERE is_trashed = 1', [], callback);
+}
+
+function lockNote(id, callback) {
+  db.run('UPDATE notes SET is_locked = 1 WHERE id = ?', [id], callback);
+}
+
+function unlockNote(id, callback) {
+  db.run('UPDATE notes SET is_locked = 0 WHERE id = ?', [id], callback);
+}
+
+function pinNote(id, callback) {
+  db.run('UPDATE notes SET is_pinned = 1 WHERE id = ?', [id], callback);
+}
+
+function unpinNote(id, callback) {
+  db.run('UPDATE notes SET is_pinned = 0 WHERE id = ?', [id], callback);
+}
+
 function deleteNote(id, callback) {
   db.run('DELETE FROM notes WHERE id = ?', [id], callback);
 }
@@ -152,6 +235,7 @@ function clearNotes(callback) {
 module.exports = {
   getAllNotes,
   getArchivedNotes,
+  getTrashedNotes,
   getNoteById,
   addNote,
   addNoteDirect,
@@ -159,6 +243,13 @@ module.exports = {
   archiveNote,
   restoreArchivedNote,
   clearArchivedNotes,
+  moveToTrash,
+  restoreFromTrash,
+  emptyTrash,
+  lockNote,
+  unlockNote,
+  pinNote,
+  unpinNote,
   deleteNote,
   clearNotes,
 };

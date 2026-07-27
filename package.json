@@ -38,10 +38,12 @@
   "author": "Rudra Bandekar",
   "license": "MIT",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "chalk": "^4.1.2",
     "cli-table3": "^0.6.5",
     "commander": "^14.0.3",
     "inquirer": "^14.0.2",
+    "prompt-sync": "^4.2.0",
     "prompts": "^2.4.2",
     "sqlite3": "^6.0.1"
   },
@@ -51,6 +53,7 @@
     "globals": "^17.7.0",
     "husky": "^9.1.7",
     "jest": "^30.4.2",
+    "jest-mock": "^30.4.1",
     "lint-staged": "^16.4.0",
     "prettier": "^3.9.6"
   }

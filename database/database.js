@@ -27,6 +27,9 @@ db.serialize(() => {
       recurrence TEXT,
       completed INTEGER NOT NULL DEFAULT 0,
       archived INTEGER NOT NULL DEFAULT 0,
+      is_trashed INTEGER NOT NULL DEFAULT 0,
+      is_locked INTEGER NOT NULL DEFAULT 0,
+      is_pinned INTEGER NOT NULL DEFAULT 0,
       createdAt TEXT NOT NULL
     )
   `);
@@ -44,7 +47,7 @@ db.serialize(() => {
   `);
 
   // =========================
-  // Migration: Add archived column if missing
+  // Database Migrations
   // =========================
   db.all('PRAGMA table_info(notes)', (err, columns) => {
     if (err) {
@@ -66,19 +69,52 @@ db.serialize(() => {
         }
       );
     }
-  });
 
-  // =========================
-  // Migration: Ensure undo_history table exists
-  // =========================
-  db.run(`
-    CREATE TABLE IF NOT EXISTS undo_history (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      operation TEXT NOT NULL,
-      payload TEXT NOT NULL,
-      createdAt TEXT NOT NULL
-    )
-  `);
+    const hasTrashed = columns.some((column) => column.name === 'is_trashed');
+
+    if (!hasTrashed) {
+      db.run(
+        'ALTER TABLE notes ADD COLUMN is_trashed INTEGER NOT NULL DEFAULT 0',
+        (alterErr) => {
+          if (alterErr) {
+            console.error(alterErr.message);
+          } else {
+            console.log('✔ Database migrated: is_trashed column added.');
+          }
+        }
+      );
+    }
+
+    const hasLocked = columns.some((column) => column.name === 'is_locked');
+
+    if (!hasLocked) {
+      db.run(
+        'ALTER TABLE notes ADD COLUMN is_locked INTEGER NOT NULL DEFAULT 0',
+        (alterErr) => {
+          if (alterErr) {
+            console.error(alterErr.message);
+          } else {
+            console.log('✔ Database migrated: is_locked column added.');
+          }
+        }
+      );
+    }
+
+    const hasPinned = columns.some((column) => column.name === 'is_pinned');
+
+    if (!hasPinned) {
+      db.run(
+        'ALTER TABLE notes ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 0',
+        (alterErr) => {
+          if (alterErr) {
+            console.error(alterErr.message);
+          } else {
+            console.log('✔ Database migrated: is_pinned column added.');
+          }
+        }
+      );
+    }
+  });
 });
 
 module.exports = db;

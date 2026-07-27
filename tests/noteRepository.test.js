@@ -7,11 +7,19 @@ const {
   archiveNote,
   restoreArchivedNote,
   clearArchivedNotes,
+  pinNote,
+  unpinNote,
   deleteNote,
   clearNotes,
 } = require('../database/noteRepository');
 
 describe('Note Repository', () => {
+  beforeEach((done) => {
+    clearNotes((err) => {
+      expect(err).toBeNull();
+      done();
+    });
+  });
   const sampleNote = {
     id: 1,
     text: 'Learn Jest',
@@ -21,6 +29,9 @@ describe('Note Repository', () => {
     recurrence: null,
     completed: false,
     archived: false,
+    is_trashed: false,
+    is_locked: false,
+    is_pinned: false,
     createdAt: new Date().toISOString(),
   };
 
@@ -168,6 +179,40 @@ describe('Note Repository', () => {
           expect(err).toBeNull();
           expect(notes).toHaveLength(0);
           done();
+        });
+      });
+    });
+  });
+  test('should pin a note', (done) => {
+    addNote(sampleNote, (err) => {
+      expect(err).toBeNull();
+
+      pinNote(1, (err) => {
+        expect(err).toBeNull();
+
+        getNoteById(1, (err, note) => {
+          expect(err).toBeNull();
+          expect(note.is_pinned).toBe(true);
+          done();
+        });
+      });
+    });
+  });
+  test('should unpin a note', (done) => {
+    addNote(sampleNote, (err) => {
+      expect(err).toBeNull();
+
+      pinNote(1, (err) => {
+        expect(err).toBeNull();
+
+        unpinNote(1, (err) => {
+          expect(err).toBeNull();
+
+          getNoteById(1, (err, note) => {
+            expect(err).toBeNull();
+            expect(note.is_pinned).toBe(false);
+            done();
+          });
         });
       });
     });

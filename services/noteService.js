@@ -7,6 +7,7 @@ const { validateRecurrence } = require('../validators/recurrenceValidator');
 const {
   getAllNotes,
   getArchivedNotes,
+  getTrashedNotes,
   getNoteById,
   addNote: addNoteToDB,
   addNoteDirect,
@@ -14,6 +15,13 @@ const {
   archiveNote: archiveNoteInDB,
   restoreArchivedNote: restoreArchivedNoteInDB,
   clearArchivedNotes: clearArchivedNotesFromDB,
+  moveToTrash,
+  restoreFromTrash,
+  emptyTrash,
+  lockNote: lockNoteInDB,
+  unlockNote: unlockNoteInDB,
+  pinNote: pinNoteInDB,
+  unpinNote: unpinNoteInDB,
   deleteNote: deleteNoteFromDB,
   clearNotes: clearNotesFromDB,
 } = require('../database/noteRepository');
@@ -88,6 +96,9 @@ function addNote(
       recurrence: validatedRecurrence,
       completed: false,
       archived: false,
+      is_trashed: false,
+      is_locked: false,
+      is_pinned: false,
       createdAt: new Date().toISOString(),
     };
 
@@ -150,14 +161,22 @@ function deleteNote(id) {
       return;
     }
 
-    deleteNoteFromDB(Number(id), (err) => {
+    if (note.is_trashed) {
+      ui.warning('⚠ Note is already in Trash.');
+      return;
+    }
+    if (note.is_locked) {
+      ui.warning('⚠ Note is locked.');
+      return;
+    }
+    moveToTrash(Number(id), (err) => {
       if (err) {
-        ui.error('✖ Failed to delete note.');
+        ui.error('✖ Failed to move note to Trash.');
         return;
       }
 
       saveUndo(
-        'delete',
+        'trash',
         {
           note,
         },
@@ -166,9 +185,9 @@ function deleteNote(id) {
             ui.warning('⚠ Undo history could not be saved.');
           }
 
-          logger.log('DELETE', note.text);
+          logger.log('TRASH', note.text);
 
-          ui.success(`✔ Deleted: ${note.text}`);
+          ui.success(`✔ Moved to Trash: ${note.text}`);
         }
       );
     });
@@ -193,7 +212,10 @@ function updateNote(id, newText) {
       ui.error('✖ Invalid note ID.');
       return;
     }
-
+    if (note.is_locked) {
+      ui.warning('⚠ Note is locked.');
+      return;
+    }
     const exists = notes.some(
       (n) =>
         n.id !== note.id &&
@@ -250,6 +272,10 @@ function completeNote(id) {
       return;
     }
     const oldNote = { ...note };
+    if (note.is_locked) {
+      ui.warning('⚠ Note is locked.');
+      return;
+    }
     if (note.completed) {
       ui.warning('⚠ Note is already completed.');
       return;
@@ -317,6 +343,9 @@ function completeNote(id) {
           recurrence: note.recurrence,
           completed: false,
           archived: false,
+          is_trashed: false,
+          is_locked: false,
+          is_pinned: false,
           createdAt: new Date().toISOString(),
         },
         (err) => {
@@ -355,7 +384,10 @@ function uncompleteNote(id) {
       ui.error('✖ Invalid note ID.');
       return;
     }
-
+    if (note.is_locked) {
+      ui.warning('⚠ Note is locked.');
+      return;
+    }
     note.completed = false;
 
     updateNoteInDB(note, (err) => {
@@ -448,7 +480,10 @@ function archiveNote(id) {
       ui.warning('⚠ Note is already archived.');
       return;
     }
-
+    if (note.is_locked) {
+      ui.warning('⚠ Note is locked.');
+      return;
+    }
     archiveNoteInDB(Number(id), (err) => {
       if (err) {
         ui.error('✖ Failed to archive note.');
@@ -493,6 +528,77 @@ function listArchivedNotes() {
   });
 }
 
+function listTrashedNotes() {
+  getTrashedNotes((err, notes) => {
+    if (err) {
+      ui.error('✖ Failed to load Trash.');
+      return;
+    }
+
+    ui.heading('\nTrash');
+    ui.divider();
+
+    if (notes.length === 0) {
+      ui.warning('Trash is empty.');
+      return;
+    }
+
+    printNotes(notes);
+  });
+}
+function restoreTrashedNote(id) {
+  getNoteById(Number(id), (err, note) => {
+    if (err) {
+      ui.error('✖ Failed to load note.');
+      return;
+    }
+
+    if (!note) {
+      ui.error('✖ Invalid note ID.');
+      return;
+    }
+
+    if (!note.is_trashed) {
+      ui.warning('⚠ Note is not in Trash.');
+      return;
+    }
+
+    restoreFromTrash(Number(id), (err) => {
+      if (err) {
+        ui.error('✖ Failed to restore note.');
+        return;
+      }
+
+      saveUndo(
+        'restore-trash',
+        {
+          note,
+        },
+        (undoErr) => {
+          if (undoErr) {
+            ui.warning('⚠ Undo history could not be saved.');
+          }
+
+          logger.log('RESTORE_TRASH', note.text);
+
+          ui.success(`✔ Restored from Trash: ${note.text}`);
+        }
+      );
+    });
+  });
+}
+function emptyTrashBin() {
+  emptyTrash((err) => {
+    if (err) {
+      ui.error('✖ Failed to empty Trash.');
+      return;
+    }
+
+    logger.log('EMPTY_TRASH', 'All trashed notes');
+
+    ui.success('✔ Trash emptied successfully.');
+  });
+}
 function restoreArchivedNote(id) {
   getNoteById(Number(id), (err, note) => {
     if (err) {
@@ -545,13 +651,184 @@ function clearArchivedNotes() {
     ui.success('✔ Archived notes cleared.');
   });
 }
+function lockNote(id) {
+  getNoteById(Number(id), (err, note) => {
+    if (err) {
+      ui.error('✖ Failed to load note.');
+      return;
+    }
+
+    if (!note) {
+      ui.error('✖ Invalid note ID.');
+      return;
+    }
+
+    if (note.is_locked) {
+      ui.warning('⚠ Note is already locked.');
+      return;
+    }
+
+    lockNoteInDB(Number(id), (err) => {
+      if (err) {
+        ui.error('✖ Failed to lock note.');
+        return;
+      }
+
+      saveUndo(
+        'lock',
+        {
+          note,
+        },
+        (undoErr) => {
+          if (undoErr) {
+            ui.warning('⚠ Undo history could not be saved.');
+          }
+
+          logger.log('LOCK', note.text);
+
+          ui.success(`✔ Locked: ${note.text}`);
+        }
+      );
+    });
+  });
+}
+function unlockNote(id) {
+  getNoteById(Number(id), (err, note) => {
+    if (err) {
+      ui.error('✖ Failed to load note.');
+      return;
+    }
+
+    if (!note) {
+      ui.error('✖ Invalid note ID.');
+      return;
+    }
+
+    if (!note.is_locked) {
+      ui.warning('⚠ Note is not locked.');
+      return;
+    }
+
+    unlockNoteInDB(Number(id), (err) => {
+      if (err) {
+        ui.error('✖ Failed to unlock note.');
+        return;
+      }
+
+      saveUndo(
+        'unlock',
+        {
+          note,
+        },
+        (undoErr) => {
+          if (undoErr) {
+            ui.warning('⚠ Undo history could not be saved.');
+          }
+
+          logger.log('UNLOCK', note.text);
+
+          ui.success(`✔ Unlocked: ${note.text}`);
+        }
+      );
+    });
+  });
+}
+function pinNote(id) {
+  getNoteById(Number(id), (err, note) => {
+    if (err) {
+      ui.error('✖ Failed to load note.');
+      return;
+    }
+
+    if (!note) {
+      ui.error('✖ Invalid note ID.');
+      return;
+    }
+
+    if (note.is_pinned) {
+      ui.warning('⚠ Note is already pinned.');
+      return;
+    }
+
+    pinNoteInDB(Number(id), (err) => {
+      if (err) {
+        ui.error('✖ Failed to pin note.');
+        return;
+      }
+
+      saveUndo(
+        'pin',
+        {
+          note,
+        },
+        (undoErr) => {
+          if (undoErr) {
+            ui.warning('⚠ Undo history could not be saved.');
+          }
+
+          logger.log('PIN', note.text);
+
+          ui.success(`✔ Pinned: ${note.text}`);
+        }
+      );
+    });
+  });
+}
+function unpinNote(id) {
+  getNoteById(Number(id), (err, note) => {
+    if (err) {
+      ui.error('✖ Failed to load note.');
+      return;
+    }
+
+    if (!note) {
+      ui.error('✖ Invalid note ID.');
+      return;
+    }
+
+    if (!note.is_pinned) {
+      ui.warning('⚠ Note is not pinned.');
+      return;
+    }
+
+    unpinNoteInDB(Number(id), (err) => {
+      if (err) {
+        ui.error('✖ Failed to unpin note.');
+        return;
+      }
+
+      saveUndo(
+        'unpin',
+        {
+          note,
+        },
+        (undoErr) => {
+          if (undoErr) {
+            ui.warning('⚠ Undo history could not be saved.');
+          }
+
+          logger.log('UNPIN', note.text);
+
+          ui.success(`✔ Unpinned: ${note.text}`);
+        }
+      );
+    });
+  });
+}
 module.exports = {
   addNote,
   listNotes,
   archiveNote,
   listArchivedNotes,
+  listTrashedNotes,
+  restoreTrashedNote,
+  emptyTrashBin,
   restoreArchivedNote,
   clearArchivedNotes,
+  lockNote,
+  unlockNote,
+  pinNote,
+  unpinNote,
   deleteNote,
   updateNote,
   completeNote,

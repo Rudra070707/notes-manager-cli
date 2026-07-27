@@ -14,12 +14,26 @@ jest.mock('../ui/table', () => ({
 jest.mock('../database/noteRepository', () => ({
   getAllNotes: jest.fn(),
   getArchivedNotes: jest.fn(),
+  getTrashedNotes: jest.fn(),
   getNoteById: jest.fn(),
+
   addNote: jest.fn(),
+  addNoteDirect: jest.fn(),
   updateNote: jest.fn(),
+
   archiveNote: jest.fn(),
   restoreArchivedNote: jest.fn(),
   clearArchivedNotes: jest.fn(),
+
+  moveToTrash: jest.fn(),
+  restoreFromTrash: jest.fn(),
+  emptyTrash: jest.fn(),
+
+  lockNote: jest.fn(),
+  unlockNote: jest.fn(),
+  pinNote: jest.fn(),
+  unpinNote: jest.fn(),
+
   deleteNote: jest.fn(),
   clearNotes: jest.fn(),
 }));
@@ -181,13 +195,12 @@ describe('Note Service', () => {
       callback(null, note);
     });
 
-    repository.deleteNote.mockImplementation((id, callback) => {
+    repository.moveToTrash.mockImplementation((id, callback) => {
       callback(new Error('DB Error'));
     });
 
     service.deleteNote(1);
-
-    expect(ui.error).toHaveBeenCalledWith('✖ Failed to delete note.');
+    expect(ui.error).toHaveBeenCalledWith('✖ Failed to move note to Trash.');
   });
 
   test('should delete a note successfully', () => {
@@ -200,15 +213,18 @@ describe('Note Service', () => {
       callback(null, note);
     });
 
-    repository.deleteNote.mockImplementation((id, callback) => {
+    repository.moveToTrash.mockImplementation((id, callback) => {
       callback(null);
     });
 
     service.deleteNote(1);
 
-    expect(repository.deleteNote).toHaveBeenCalledWith(1, expect.any(Function));
+    expect(repository.moveToTrash).toHaveBeenCalledWith(
+      1,
+      expect.any(Function)
+    );
 
-    expect(ui.success).toHaveBeenCalledWith('✔ Deleted: Learn Express');
+    expect(ui.success).toHaveBeenCalledWith('✔ Moved to Trash: Learn Express');
   });
   test('should reject updating with empty text', () => {
     service.updateNote(1, '');
@@ -738,5 +754,310 @@ describe('Note Service', () => {
     expect(repository.clearArchivedNotes).toHaveBeenCalledTimes(1);
 
     expect(ui.success).toHaveBeenCalledWith('✔ Archived notes cleared.');
+  });
+  test('should list trashed notes', () => {
+    const notes = [
+      {
+        id: 1,
+        text: 'Deleted Note',
+        is_trashed: true,
+      },
+    ];
+
+    repository.getTrashedNotes.mockImplementation((callback) => {
+      callback(null, notes);
+    });
+
+    service.listTrashedNotes();
+
+    expect(repository.getTrashedNotes).toHaveBeenCalledTimes(1);
+    expect(printNotes).toHaveBeenCalledWith(notes);
+  });
+  test('should restore a trashed note', () => {
+    const note = {
+      id: 1,
+      text: 'Deleted Note',
+      is_trashed: true,
+    };
+
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, note);
+    });
+
+    repository.restoreFromTrash.mockImplementation((id, callback) => {
+      callback(null);
+    });
+
+    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
+      callback(null);
+    });
+
+    service.restoreTrashedNote(1);
+
+    expect(repository.restoreFromTrash).toHaveBeenCalledWith(
+      1,
+      expect.any(Function)
+    );
+
+    expect(ui.success).toHaveBeenCalledWith(
+      '✔ Restored from Trash: Deleted Note'
+    );
+  });
+  test('should empty trash successfully', () => {
+    repository.emptyTrash.mockImplementation((callback) => {
+      callback(null);
+    });
+
+    service.emptyTrashBin();
+
+    expect(repository.emptyTrash).toHaveBeenCalledTimes(1);
+
+    expect(ui.success).toHaveBeenCalledWith('✔ Trash emptied successfully.');
+  });
+  test('should lock a note successfully', () => {
+    const note = {
+      id: 1,
+      text: 'Learn Express',
+      is_locked: false,
+    };
+
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, note);
+    });
+
+    repository.lockNote.mockImplementation((id, callback) => {
+      callback(null);
+    });
+
+    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
+      callback(null);
+    });
+
+    service.lockNote(1);
+
+    expect(repository.lockNote).toHaveBeenCalledWith(1, expect.any(Function));
+
+    expect(ui.success).toHaveBeenCalledWith('✔ Locked: Learn Express');
+  });
+  test('should unlock a note successfully', () => {
+    const note = {
+      id: 1,
+      text: 'Learn Express',
+      is_locked: true,
+    };
+
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, note);
+    });
+
+    repository.unlockNote.mockImplementation((id, callback) => {
+      callback(null);
+    });
+
+    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
+      callback(null);
+    });
+
+    service.unlockNote(1);
+
+    expect(repository.unlockNote).toHaveBeenCalledWith(1, expect.any(Function));
+
+    expect(ui.success).toHaveBeenCalledWith('✔ Unlocked: Learn Express');
+  });
+  test('should pin a note successfully', () => {
+    const note = {
+      id: 1,
+      text: 'Learn Express',
+      is_pinned: false,
+    };
+
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, note);
+    });
+
+    repository.pinNote.mockImplementation((id, callback) => {
+      callback(null);
+    });
+
+    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
+      callback(null);
+    });
+
+    service.pinNote(1);
+
+    expect(repository.pinNote).toHaveBeenCalledWith(1, expect.any(Function));
+
+    expect(ui.success).toHaveBeenCalledWith('✔ Pinned: Learn Express');
+  });
+  test('should unpin a note successfully', () => {
+    const note = {
+      id: 1,
+      text: 'Learn Express',
+      is_pinned: true,
+    };
+
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, note);
+    });
+
+    repository.unpinNote.mockImplementation((id, callback) => {
+      callback(null);
+    });
+
+    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
+      callback(null);
+    });
+
+    service.unpinNote(1);
+
+    expect(repository.unpinNote).toHaveBeenCalledWith(1, expect.any(Function));
+
+    expect(ui.success).toHaveBeenCalledWith('✔ Unpinned: Learn Express');
+  });
+  test('should reject pinning an already pinned note', () => {
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, {
+        id: 1,
+        text: 'Learn Express',
+        is_pinned: true,
+      });
+    });
+
+    service.pinNote(1);
+
+    expect(repository.pinNote).not.toHaveBeenCalled();
+
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note is already pinned.');
+  });
+  test('should reject unpinning an unpinned note', () => {
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, {
+        id: 1,
+        text: 'Learn Express',
+        is_pinned: false,
+      });
+    });
+
+    service.unpinNote(1);
+
+    expect(repository.unpinNote).not.toHaveBeenCalled();
+
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note is not pinned.');
+  });
+  test('should reject locking an already locked note', () => {
+    const note = {
+      id: 1,
+      text: 'Learn Express',
+      is_locked: true,
+    };
+
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, note);
+    });
+
+    service.lockNote(1);
+
+    expect(repository.lockNote).not.toHaveBeenCalled();
+
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note is already locked.');
+  });
+  test('should reject unlocking an unlocked note', () => {
+    const note = {
+      id: 1,
+      text: 'Learn Express',
+      is_locked: false,
+    };
+
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, note);
+    });
+
+    service.unlockNote(1);
+
+    expect(repository.unlockNote).not.toHaveBeenCalled();
+
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note is not locked.');
+  });
+  test('should reject updating a locked note', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(null, [
+        {
+          id: 1,
+          text: 'Learn Express',
+          is_locked: true,
+        },
+      ]);
+    });
+
+    service.updateNote(1, 'New Text');
+
+    expect(repository.updateNote).not.toHaveBeenCalled();
+
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note is locked.');
+  });
+  test('should reject deleting a locked note', () => {
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, {
+        id: 1,
+        text: 'Learn Express',
+        is_locked: true,
+      });
+    });
+
+    service.deleteNote(1);
+
+    expect(repository.moveToTrash).not.toHaveBeenCalled();
+
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note is locked.');
+  });
+  test('should reject archiving a locked note', () => {
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, {
+        id: 1,
+        text: 'Learn Express',
+        archived: false,
+        is_locked: true,
+      });
+    });
+
+    service.archiveNote(1);
+
+    expect(repository.archiveNote).not.toHaveBeenCalled();
+
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note is locked.');
+  });
+  test('should reject completing a locked note', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(null, [
+        {
+          id: 1,
+          text: 'Learn Express',
+          completed: false,
+          is_locked: true,
+        },
+      ]);
+    });
+
+    service.completeNote(1);
+
+    expect(repository.updateNote).not.toHaveBeenCalled();
+
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note is locked.');
+  });
+  test('should reject uncompleting a locked note', () => {
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, {
+        id: 1,
+        text: 'Learn Express',
+        completed: true,
+        is_locked: true,
+      });
+    });
+
+    service.uncompleteNote(1);
+
+    expect(repository.updateNote).not.toHaveBeenCalled();
+
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note is locked.');
   });
 });
