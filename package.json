@@ -1,12 +1,55 @@
 {
   "name": "notes-manager-cli",
-  "version": "1.0.0",
-  "description": "A command-line notes manager built with Node.js",
-  "main": "index.js",
-  "type": "commonjs",
-  "bin": {
-    "notes": "./index.js"
+  "version": "1.0.1",
+  "description": "A professional feature-rich command-line Notes Manager built with Node.js, Commander.js, and SQLite.",
+  "keywords": [
+    "notes",
+    "notes-manager",
+    "cli",
+    "command-line",
+    "nodejs",
+    "commander",
+    "sqlite",
+    "productivity",
+    "todo",
+    "tasks",
+    "terminal",
+    "javascript",
+    "jest"
+  ],
+  "homepage": "https://github.com/Rudra070707/notes-manager-cli#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rudra070707/notes-manager-cli.git"
   },
+  "bugs": {
+    "url": "https://github.com/Rudra070707/notes-manager-cli/issues"
+  },
+  "author": "Rudra Bandekar",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "index.js",
+  "bin": {
+    "notes": "index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "commands/",
+    "config/",
+    "database/",
+    "filters/",
+    "helpers/",
+    "services/",
+    "sorters/",
+    "ui/",
+    "utils/",
+    "validators/",
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "start": "node index.js",
     "lint": "eslint .",
@@ -27,16 +70,6 @@
       "prettier --write"
     ]
   },
-  "keywords": [
-    "nodejs",
-    "cli",
-    "notes",
-    "javascript",
-    "sqlite",
-    "jest"
-  ],
-  "author": "Rudra Bandekar",
-  "license": "MIT",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "chalk": "^4.1.2",
