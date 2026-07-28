@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 const { Command } = require('commander');
 
 const add = require('./commands/add');
@@ -379,4 +378,4 @@ program
     report();
   });
 program.addCommand(categoryCommand);
-program.parse();
+program.parse(process.argv);
