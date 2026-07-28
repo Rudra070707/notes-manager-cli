@@ -1,4 +1,4 @@
-const chalk = require("chalk");
+const chalk = require('chalk');
 
 module.exports = {
   success: (text) => console.log(chalk.green(text)),
@@ -12,7 +12,7 @@ module.exports = {
   heading: (text) => console.log(chalk.blue.bold(text)),
 
   divider: () =>
-    console.log(chalk.gray("--------------------------------------")),
+    console.log(chalk.gray('--------------------------------------')),
 
   normal: (text) => console.log(text),
 };

@@ -3,7 +3,7 @@ function validateDueDate(dueDate) {
     return null;
   }
 
-  if (typeof dueDate !== "string") {
+  if (typeof dueDate !== 'string') {
     return null;
   }
 
@@ -19,7 +19,7 @@ function validateDueDate(dueDate) {
     return null;
   }
 
-  const [year, month, day] = dueDate.split("-").map(Number);
+  const [year, month, day] = dueDate.split('-').map(Number);
 
   if (
     date.getUTCFullYear() !== year ||

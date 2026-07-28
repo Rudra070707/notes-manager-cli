@@ -67,7 +67,7 @@ function clearHistory() {
   try {
     clearLogs();
     ui.success('✔ History cleared successfully.');
-  } catch (error) {
+  } catch {
     ui.error('✖ Failed to clear history.');
   }
 }

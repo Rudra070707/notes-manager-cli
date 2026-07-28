@@ -1,8 +1,8 @@
-const PRIORITIES = ["low", "medium", "high"];
+const PRIORITIES = ['low', 'medium', 'high'];
 
 function validatePriority(priority) {
   if (!priority) {
-    return "medium";
+    return 'medium';
   }
 
   const value = priority.toLowerCase().trim();

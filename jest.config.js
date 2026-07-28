@@ -1,19 +1,19 @@
 module.exports = {
-  testEnvironment: "node",
+  testEnvironment: 'node',
 
-  testMatch: ["**/tests/**/*.test.js"],
+  testMatch: ['**/tests/**/*.test.js'],
 
-  setupFilesAfterEnv: ["<rootDir>/tests/setup.js"],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
 
   collectCoverageFrom: [
-    "services/**/*.js",
-    "database/**/*.js",
-    "utils/**/*.js",
-    "!**/node_modules/**",
-    "!**/coverage/**",
+    'services/**/*.js',
+    'database/**/*.js',
+    'utils/**/*.js',
+    '!**/node_modules/**',
+    '!**/coverage/**',
   ],
 
-  coverageDirectory: "coverage",
+  coverageDirectory: 'coverage',
 
   clearMocks: true,
 };

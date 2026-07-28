@@ -1,12 +1,12 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
 
-const repository = require("../database/noteRepository");
+const repository = require('../database/noteRepository');
 const {
   parseJson,
   parseCsv,
   parseMarkdown,
-} = require("../utils/importParsers");
+} = require('../utils/importParsers');
 
 function importNotes(notes) {
   let imported = 0;
@@ -51,14 +51,14 @@ function importJson(filePath) {
   const absolutePath = path.resolve(filePath);
 
   if (!fs.existsSync(absolutePath)) {
-    console.log("File not found.");
+    console.log('File not found.');
     return;
   }
 
   let notes;
 
   try {
-    notes = parseJson(fs.readFileSync(absolutePath, "utf8"));
+    notes = parseJson(fs.readFileSync(absolutePath, 'utf8'));
   } catch (error) {
     console.log(error.message);
     return;
@@ -71,14 +71,14 @@ function importCsv(filePath) {
   const absolutePath = path.resolve(filePath);
 
   if (!fs.existsSync(absolutePath)) {
-    console.log("File not found.");
+    console.log('File not found.');
     return;
   }
 
   let notes;
 
   try {
-    notes = parseCsv(fs.readFileSync(absolutePath, "utf8"));
+    notes = parseCsv(fs.readFileSync(absolutePath, 'utf8'));
   } catch (error) {
     console.log(error.message);
     return;
@@ -91,14 +91,14 @@ function importMarkdown(filePath) {
   const absolutePath = path.resolve(filePath);
 
   if (!fs.existsSync(absolutePath)) {
-    console.log("File not found.");
+    console.log('File not found.');
     return;
   }
 
   let notes;
 
   try {
-    notes = parseMarkdown(fs.readFileSync(absolutePath, "utf8"));
+    notes = parseMarkdown(fs.readFileSync(absolutePath, 'utf8'));
   } catch (error) {
     console.log(error.message);
     return;

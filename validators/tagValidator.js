@@ -3,12 +3,12 @@ function validateTag(tag) {
     return [];
   }
 
-  if (typeof tag !== "string") {
+  if (typeof tag !== 'string') {
     return [];
   }
 
   const tags = tag
-    .split(",")
+    .split(',')
     .map((t) => t.trim().toLowerCase())
     .filter(Boolean);
 

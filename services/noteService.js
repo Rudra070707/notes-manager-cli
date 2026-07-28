@@ -11,7 +11,6 @@ const {
   getFavoriteNotes,
   getNoteById,
   addNote: addNoteToDB,
-  addNoteDirect,
   updateNote: updateNoteInDB,
   setCategory: setCategoryInDB,
   renameCategory: renameCategoryInDB,
@@ -29,7 +28,6 @@ const {
   unpinNote: unpinNoteInDB,
   favoriteNote: favoriteNoteInDB,
   unfavoriteNote: unfavoriteNoteInDB,
-  deleteNote: deleteNoteFromDB,
   clearNotes: clearNotesFromDB,
 } = require('../database/noteRepository');
 const ui = require('../ui/colors');

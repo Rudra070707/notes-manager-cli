@@ -1,4 +1,4 @@
-const noteService = require("../services/noteService");
+const noteService = require('../services/noteService');
 
 function execute() {
   noteService.showStats();

@@ -1,5 +1,5 @@
 function validateText(text) {
-  if (typeof text !== "string") {
+  if (typeof text !== 'string') {
     return false;
   }
 
