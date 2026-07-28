@@ -1,4 +1,4 @@
-const noteService = require('../services/noteService');
+const { favoriteNote } = require('../services/noteService');
 
 function execute(ids) {
   if (!Array.isArray(ids) || ids.length === 0) {
@@ -7,7 +7,7 @@ function execute(ids) {
   }
 
   ids.forEach((id) => {
-    noteService.uncompleteNote(id);
+    favoriteNote(id);
   });
 }
 

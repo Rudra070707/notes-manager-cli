@@ -22,6 +22,9 @@ const lock = require('./commands/lock');
 const unlock = require('./commands/unlock');
 const pin = require('./commands/pin');
 const unpin = require('./commands/unpin');
+const favorite = require('./commands/favorite');
+const unfavorite = require('./commands/unfavorite');
+const favorites = require('./commands/favorites');
 const stats = require('./commands/stats');
 const exportCommand = require('./commands/export');
 const importCommand = require('./commands/import');
@@ -33,8 +36,16 @@ const restoreBackup = require('./commands/restoreBackup');
 const categoryCommand = require('./commands/category');
 const categories = require('./commands/categories');
 const renameCategory = require('./commands/renameCategory');
+const deleteCategory = require('./commands/deleteCategory');
+const history = require('./commands/history');
 const config = require('./commands/config');
-
+const doctor = require('./commands/doctor');
+const today = require('./commands/today');
+const overdue = require('./commands/overdue');
+const upcoming = require('./commands/upcoming');
+const recent = require('./commands/recent');
+const next = require('./commands/next');
+const report = require('./commands/report');
 const program = new Command();
 
 program
@@ -70,16 +81,17 @@ program
   .option('--this-week', 'Show notes due this week')
   .option('--overdue', 'Show overdue notes')
   .option('--upcoming', 'Show upcoming notes')
+  .option('-f, --favorite', 'Show only favorite notes')
   .action((options) => {
     list([], options);
   });
 
 program
-  .command('delete <id>')
+  .command('delete <ids...>')
   .alias('rm')
   .description('Delete a note')
-  .action((id) => {
-    del([id]);
+  .action((ids) => {
+    del(ids);
   });
 
 program
@@ -88,20 +100,19 @@ program
   .action((id, text) => {
     update([id, text]);
   });
-
 program
-  .command('complete <id>')
+  .command('complete <ids...>')
   .alias('done')
   .description('Mark a note as completed')
-  .action((id) => {
-    complete([id]);
+  .action((ids) => {
+    complete(ids);
   });
 
 program
-  .command('uncomplete <id>')
+  .command('uncomplete <ids...>')
   .description('Mark a completed note as pending')
-  .action((id) => {
-    uncomplete([id]);
+  .action((ids) => {
+    uncomplete(ids);
   });
 
 program
@@ -112,13 +123,20 @@ program
   });
 
 program
-  .command('search <keyword>')
+  .command('search [keyword]')
   .alias('find')
-  .description('Search notes')
-  .action((keyword) => {
-    search([keyword]);
+  .description('Advanced search notes')
+  .option('-p, --priority <priority>', 'Filter by priority')
+  .option('-t, --tag <tag>', 'Filter by tag')
+  .option('--category <category>', 'Filter by category')
+  .option('-f, --favorite', 'Favorite notes only')
+  .option('--locked', 'Locked notes only')
+  .option('--pinned', 'Pinned notes only')
+  .option('-c, --completed', 'Completed notes only')
+  .option('--pending', 'Pending notes only')
+  .action((keyword, options) => {
+    search(keyword, options);
   });
-
 program
   .command('clear')
   .description('Delete all notes')
@@ -127,11 +145,11 @@ program
   });
 
 program
-  .command('archive <id>')
+  .command('archive <ids...>')
   .alias('arc')
   .description('Archive a note')
-  .action((id) => {
-    archive([id]);
+  .action((ids) => {
+    archive(ids);
   });
 
 program
@@ -159,35 +177,55 @@ program
     emptyTrash();
   });
 program
-  .command('lock <id>')
+  .command('lock <ids...>')
   .description('Lock a note')
-  .action((id) => {
-    lock([id]);
+  .action((ids) => {
+    lock(ids);
   });
 program
-  .command('pin <id>')
+  .command('pin <ids...>')
   .description('Pin a note')
-  .action((id) => {
-    pin(id);
+  .action((ids) => {
+    pin(ids);
   });
 program
-  .command('unlock <id>')
+  .command('unlock <ids...>')
   .description('Unlock a note')
-  .action((id) => {
-    unlock([id]);
+  .action((ids) => {
+    unlock(ids);
   });
 program
-  .command('unpin <id>')
+  .command('unpin <ids...>')
   .description('Unpin a note')
-  .action((id) => {
-    unpin(id);
+  .action((ids) => {
+    unpin(ids);
   });
 program
-  .command('restore <id>')
+  .command('favorite <ids...>')
+  .description('Add a note to favorites')
+  .action((ids) => {
+    favorite(ids);
+  });
+
+program
+  .command('unfavorite <ids...>')
+  .description('Remove a note from favorites')
+  .action((ids) => {
+    unfavorite(ids);
+  });
+
+program
+  .command('favorites')
+  .description('List all favorite notes')
+  .action(() => {
+    favorites();
+  });
+program
+  .command('restore <ids...>')
   .alias('res')
   .description('Restore an archived note')
-  .action((id) => {
-    restore([id]);
+  .action((ids) => {
+    restore(ids);
   });
 
 program
@@ -277,6 +315,68 @@ program
   .description('Rename a category')
   .action((oldCategory, newCategory) => {
     renameCategory([oldCategory, newCategory]);
+  });
+program
+  .command('delete-category <category>')
+  .description('Delete a category and move its notes to General')
+  .action((category) => {
+    deleteCategory([category]);
+  });
+program
+  .command('history')
+  .description('Show note activity history')
+  .option('-l, --limit <number>', 'Show only the latest N history records')
+  .option(
+    '-t, --type <type>',
+    'Filter by action type (ADD, UPDATE, DELETE, COMPLETE, etc.)'
+  )
+  .option('-s, --search <keyword>', 'Search history')
+  .option('--today', "Show only today's history")
+  .option('--clear', 'Clear all history')
+  .action((options) => {
+    history(options);
+  });
+program
+  .command('doctor')
+  .description('Check database health')
+  .action(() => {
+    doctor();
+  });
+program
+  .command('today')
+  .description('Show notes due today')
+  .action(() => {
+    today();
+  });
+program
+  .command('overdue')
+  .description('Show overdue notes')
+  .action(() => {
+    overdue();
+  });
+program
+  .command('upcoming')
+  .description('Show notes due within the next 7 days')
+  .action(() => {
+    upcoming();
+  });
+program
+  .command('recent')
+  .description('Show the 10 most recently created notes')
+  .action(() => {
+    recent();
+  });
+program
+  .command('next')
+  .description('Show the next task to work on')
+  .action(() => {
+    next();
+  });
+program
+  .command('report')
+  .description('Generate a productivity report')
+  .action(() => {
+    report();
   });
 program.addCommand(categoryCommand);
 program.parse();

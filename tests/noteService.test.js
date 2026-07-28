@@ -33,7 +33,12 @@ jest.mock('../database/noteRepository', () => ({
   unlockNote: jest.fn(),
   pinNote: jest.fn(),
   unpinNote: jest.fn(),
-
+  favoriteNote: jest.fn(),
+  unfavoriteNote: jest.fn(),
+  setCategory: jest.fn(),
+  getCategories: jest.fn(),
+  renameCategory: jest.fn(),
+  deleteCategory: jest.fn(),
   deleteNote: jest.fn(),
   clearNotes: jest.fn(),
 }));
@@ -1059,5 +1064,213 @@ describe('Note Service', () => {
     expect(repository.updateNote).not.toHaveBeenCalled();
 
     expect(ui.warning).toHaveBeenCalledWith('⚠ Note is locked.');
+  });
+  test('should delete a category successfully', () => {
+    repository.getCategories.mockImplementation((callback) => {
+      callback(null, [
+        {
+          category: 'Work',
+        },
+      ]);
+    });
+
+    repository.deleteCategory.mockImplementation((category, callback) => {
+      callback(null);
+    });
+
+    service.deleteCategory('Work');
+
+    expect(repository.getCategories).toHaveBeenCalledTimes(1);
+
+    expect(repository.deleteCategory).toHaveBeenCalledWith(
+      'Work',
+      expect.any(Function)
+    );
+
+    expect(ui.success).toHaveBeenCalledWith(
+      '✔ Category deleted. Notes moved to General.'
+    );
+  });
+  test('should change a note category successfully', () => {
+    const note = {
+      id: 1,
+      text: 'Learn Express',
+      category: 'General',
+    };
+
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, note);
+    });
+
+    repository.setCategory.mockImplementation((id, category, callback) => {
+      callback(null);
+    });
+
+    service.setCategory(1, 'Programming');
+
+    expect(repository.getNoteById).toHaveBeenCalledTimes(1);
+
+    expect(repository.setCategory).toHaveBeenCalledWith(
+      1,
+      'Programming',
+      expect.any(Function)
+    );
+
+    expect(ui.success).toHaveBeenCalledWith(
+      '✔ Category changed to: Programming'
+    );
+  });
+  test('should rename a category successfully', () => {
+    repository.getCategories.mockImplementation((callback) => {
+      callback(null, [
+        {
+          category: 'Programming',
+        },
+      ]);
+    });
+
+    repository.renameCategory.mockImplementation(
+      (oldCategory, newCategory, callback) => {
+        callback(null);
+      }
+    );
+
+    service.renameCategory('Programming', 'Coding');
+
+    expect(repository.renameCategory).toHaveBeenCalledWith(
+      'Programming',
+      'Coding',
+      expect.any(Function)
+    );
+
+    expect(ui.success).toHaveBeenCalledWith('✔ Category renamed to: Coding');
+  });
+  test('should reject renaming a missing category', () => {
+    repository.getCategories.mockImplementation((callback) => {
+      callback(null, []);
+    });
+
+    service.renameCategory('Programming', 'Coding');
+
+    expect(repository.renameCategory).not.toHaveBeenCalled();
+
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Category not found.');
+  });
+  test('should favorite a note successfully', () => {
+    const note = {
+      id: 1,
+      text: 'Learn Express',
+      is_favorite: false,
+    };
+
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, note);
+    });
+
+    repository.favoriteNote.mockImplementation((id, callback) => {
+      callback(null);
+    });
+
+    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
+      callback(null);
+    });
+
+    service.favoriteNote(1);
+
+    expect(repository.favoriteNote).toHaveBeenCalledWith(
+      1,
+      expect.any(Function)
+    );
+
+    expect(ui.success).toHaveBeenCalledWith(
+      '✔ Added to favorites: Learn Express'
+    );
+  });
+
+  test('should reject favoriting an already favorite note', () => {
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, {
+        id: 1,
+        text: 'Learn Express',
+        is_favorite: true,
+      });
+    });
+
+    service.favoriteNote(1);
+
+    expect(repository.favoriteNote).not.toHaveBeenCalled();
+
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note is already in favorites.');
+  });
+
+  test('should reject favoriting an invalid note ID', () => {
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, null);
+    });
+
+    service.favoriteNote(1);
+
+    expect(repository.favoriteNote).not.toHaveBeenCalled();
+
+    expect(ui.error).toHaveBeenCalledWith('✖ Invalid note ID.');
+  });
+
+  test('should unfavorite a note successfully', () => {
+    const note = {
+      id: 1,
+      text: 'Learn Express',
+      is_favorite: true,
+    };
+
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, note);
+    });
+
+    repository.unfavoriteNote.mockImplementation((id, callback) => {
+      callback(null);
+    });
+
+    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
+      callback(null);
+    });
+
+    service.unfavoriteNote(1);
+
+    expect(repository.unfavoriteNote).toHaveBeenCalledWith(
+      1,
+      expect.any(Function)
+    );
+
+    expect(ui.success).toHaveBeenCalledWith(
+      '✔ Removed from favorites: Learn Express'
+    );
+  });
+
+  test('should reject unfavoriting a non-favorite note', () => {
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, {
+        id: 1,
+        text: 'Learn Express',
+        is_favorite: false,
+      });
+    });
+
+    service.unfavoriteNote(1);
+
+    expect(repository.unfavoriteNote).not.toHaveBeenCalled();
+
+    expect(ui.warning).toHaveBeenCalledWith('⚠ Note is not in favorites.');
+  });
+
+  test('should reject unfavoriting an invalid note ID', () => {
+    repository.getNoteById.mockImplementation((id, callback) => {
+      callback(null, null);
+    });
+
+    service.unfavoriteNote(1);
+
+    expect(repository.unfavoriteNote).not.toHaveBeenCalled();
+
+    expect(ui.error).toHaveBeenCalledWith('✖ Invalid note ID.');
   });
 });

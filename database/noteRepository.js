@@ -8,6 +8,7 @@ function formatNote(note) {
     is_trashed: Boolean(note.is_trashed),
     is_locked: Boolean(note.is_locked),
     is_pinned: Boolean(note.is_pinned),
+    is_favorite: Boolean(note.is_favorite),
     tags: note.tags ? JSON.parse(note.tags) : [],
     category: note.category || 'General',
   };
@@ -74,7 +75,27 @@ function getTrashedNotes(callback) {
     }
   );
 }
+function getFavoriteNotes(callback) {
+  db.all(
+    `
+    SELECT *
+    FROM notes
+    WHERE is_favorite = 1
+      AND archived = 0
+      AND is_trashed = 0
+    ORDER BY
+      is_pinned DESC,
+      priority DESC,
+      id ASC
+    `,
+    [],
+    (err, rows) => {
+      if (err) return callback(err);
 
+      callback(null, rows.map(formatNote));
+    }
+  );
+}
 function getNoteById(id, callback) {
   db.get('SELECT * FROM notes WHERE id = ?', [id], (err, row) => {
     if (err) return callback(err);
@@ -96,14 +117,15 @@ function addNote(note, callback) {
       recurrence,
       completed,
       archived,
-      is_trashed,
+is_trashed,
 is_locked,
 is_pinned,
+is_favorite,
 category,
 createdAt
     )
     VALUES (
-  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
     `,
     [
@@ -118,6 +140,7 @@ createdAt
       note.is_trashed ? 1 : 0,
       note.is_locked ? 1 : 0,
       note.is_pinned ? 1 : 0,
+      note.is_favorite ? 1 : 0,
       note.category || 'General',
       note.createdAt,
     ],
@@ -138,14 +161,15 @@ function addNoteDirect(note, callback) {
       recurrence,
       completed,
       archived,
-      is_trashed,
+is_trashed,
 is_locked,
 is_pinned,
+is_favorite,
 category,
 createdAt
     )
     VALUES (
-  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
     `,
     [
@@ -160,6 +184,7 @@ createdAt
       note.is_trashed ? 1 : 0,
       note.is_locked ? 1 : 0,
       note.is_pinned ? 1 : 0,
+      note.is_favorite ? 1 : 0,
       note.category || 'General',
       note.createdAt,
     ],
@@ -216,6 +241,17 @@ function renameCategory(oldCategory, newCategory, callback) {
     callback
   );
 }
+function deleteCategory(category, callback) {
+  db.run(
+    `
+    UPDATE notes
+    SET category = 'General'
+    WHERE LOWER(category) = LOWER(?)
+    `,
+    [category],
+    callback
+  );
+}
 function archiveNote(id, callback) {
   db.run('UPDATE notes SET archived = 1 WHERE id = ?', [id], callback);
 }
@@ -255,7 +291,13 @@ function pinNote(id, callback) {
 function unpinNote(id, callback) {
   db.run('UPDATE notes SET is_pinned = 0 WHERE id = ?', [id], callback);
 }
+function favoriteNote(id, callback) {
+  db.run('UPDATE notes SET is_favorite = 1 WHERE id = ?', [id], callback);
+}
 
+function unfavoriteNote(id, callback) {
+  db.run('UPDATE notes SET is_favorite = 0 WHERE id = ?', [id], callback);
+}
 function deleteNote(id, callback) {
   db.run('DELETE FROM notes WHERE id = ?', [id], callback);
 }
@@ -283,12 +325,14 @@ module.exports = {
   getAllNotes,
   getArchivedNotes,
   getTrashedNotes,
+  getFavoriteNotes,
   getNoteById,
   addNote,
   addNoteDirect,
   updateNote,
   setCategory,
   renameCategory,
+  deleteCategory,
   getCategories,
   archiveNote,
   restoreArchivedNote,
@@ -300,6 +344,8 @@ module.exports = {
   unlockNote,
   pinNote,
   unpinNote,
+  favoriteNote,
+  unfavoriteNote,
   deleteNote,
   clearNotes,
 };

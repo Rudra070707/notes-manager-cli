@@ -1,7 +1,10 @@
-const noteService = require("../services/noteService");
+const noteService = require('../services/noteService');
 
-function execute(args) {
-  noteService.searchNotes(args.join(" "));
+function execute(keyword, options = {}) {
+  noteService.searchNotes(
+    Array.isArray(keyword) ? keyword.join(' ') : keyword || '',
+    options
+  );
 }
 
 module.exports = execute;

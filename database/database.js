@@ -35,6 +35,34 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 // ======================================================
+// Helper
+// ======================================================
+
+function addColumnIfNotExists(table, column, definition) {
+  db.all(`PRAGMA table_info(${table})`, (err, columns) => {
+    if (err) {
+      console.error(err.message);
+      return;
+    }
+
+    const exists = columns.some((c) => c.name === column);
+
+    if (!exists) {
+      db.run(
+        `ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`,
+        (alterErr) => {
+          if (alterErr) {
+            console.error(alterErr.message);
+          } else {
+            console.log(`✔ Database migrated: ${column} column added.`);
+          }
+        }
+      );
+    }
+  });
+}
+
+// ======================================================
 // Database Initialization
 // ======================================================
 
@@ -52,6 +80,7 @@ db.serialize(() => {
       is_trashed INTEGER NOT NULL DEFAULT 0,
       is_locked INTEGER NOT NULL DEFAULT 0,
       is_pinned INTEGER NOT NULL DEFAULT 0,
+      is_favorite INTEGER NOT NULL DEFAULT 0,
       category TEXT NOT NULL DEFAULT 'General',
       createdAt TEXT NOT NULL
     )
@@ -66,87 +95,21 @@ db.serialize(() => {
     )
   `);
 
-  db.all('PRAGMA table_info(notes)', (err, columns) => {
-    if (err) {
-      console.error(err.message);
-      return;
-    }
+  // ======================================================
+  // Automatic Migrations
+  // ======================================================
 
-    const hasArchived = columns.some((column) => column.name === 'archived');
+  addColumnIfNotExists('notes', 'archived', 'INTEGER NOT NULL DEFAULT 0');
 
-    if (!hasArchived) {
-      db.run(
-        'ALTER TABLE notes ADD COLUMN archived INTEGER NOT NULL DEFAULT 0',
-        (alterErr) => {
-          if (alterErr) {
-            console.error(alterErr.message);
-          } else {
-            console.log('✔ Database migrated: archived column added.');
-          }
-        }
-      );
-    }
+  addColumnIfNotExists('notes', 'is_trashed', 'INTEGER NOT NULL DEFAULT 0');
 
-    const hasTrashed = columns.some((column) => column.name === 'is_trashed');
+  addColumnIfNotExists('notes', 'is_locked', 'INTEGER NOT NULL DEFAULT 0');
 
-    if (!hasTrashed) {
-      db.run(
-        'ALTER TABLE notes ADD COLUMN is_trashed INTEGER NOT NULL DEFAULT 0',
-        (alterErr) => {
-          if (alterErr) {
-            console.error(alterErr.message);
-          } else {
-            console.log('✔ Database migrated: is_trashed column added.');
-          }
-        }
-      );
-    }
+  addColumnIfNotExists('notes', 'is_pinned', 'INTEGER NOT NULL DEFAULT 0');
 
-    const hasLocked = columns.some((column) => column.name === 'is_locked');
+  addColumnIfNotExists('notes', 'is_favorite', 'INTEGER NOT NULL DEFAULT 0');
 
-    if (!hasLocked) {
-      db.run(
-        'ALTER TABLE notes ADD COLUMN is_locked INTEGER NOT NULL DEFAULT 0',
-        (alterErr) => {
-          if (alterErr) {
-            console.error(alterErr.message);
-          } else {
-            console.log('✔ Database migrated: is_locked column added.');
-          }
-        }
-      );
-    }
-
-    const hasPinned = columns.some((column) => column.name === 'is_pinned');
-
-    if (!hasPinned) {
-      db.run(
-        'ALTER TABLE notes ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 0',
-        (alterErr) => {
-          if (alterErr) {
-            console.error(alterErr.message);
-          } else {
-            console.log('✔ Database migrated: is_pinned column added.');
-          }
-        }
-      );
-    }
-
-    const hasCategory = columns.some((column) => column.name === 'category');
-
-    if (!hasCategory) {
-      db.run(
-        "ALTER TABLE notes ADD COLUMN category TEXT NOT NULL DEFAULT 'General'",
-        (alterErr) => {
-          if (alterErr) {
-            console.error(alterErr.message);
-          } else {
-            console.log('✔ Database migrated: category column added.');
-          }
-        }
-      );
-    }
-  });
+  addColumnIfNotExists('notes', 'category', "TEXT NOT NULL DEFAULT 'General'");
 });
 
 module.exports = db;

@@ -19,6 +19,17 @@ function filterNotes(notes, options = {}) {
       (note) => (note.category || 'General').toLowerCase() === category
     );
   }
+  if (options.favorite) {
+    filtered = filtered.filter((note) => note.is_favorite);
+  }
+
+  if (options.locked) {
+    filtered = filtered.filter((note) => note.is_locked);
+  }
+
+  if (options.pinned) {
+    filtered = filtered.filter((note) => note.is_pinned);
+  }
   if (options.completed) {
     filtered = filtered.filter((note) => note.completed);
   }

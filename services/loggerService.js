@@ -2,11 +2,15 @@ const fs = require('fs');
 const path = require('path');
 
 const logsDirectory = path.join(__dirname, '..', 'logs');
-const logFile = path.join(logsDirectory, 'app.log');
+const logFile = path.join(logsDirectory, 'notes.log');
 
 function ensureLogDirectory() {
   if (!fs.existsSync(logsDirectory)) {
     fs.mkdirSync(logsDirectory, { recursive: true });
+  }
+
+  if (!fs.existsSync(logFile)) {
+    fs.writeFileSync(logFile, '', 'utf8');
   }
 }
 
@@ -17,14 +21,13 @@ function getTimestamp() {
 function log(action, message) {
   ensureLogDirectory();
 
-  const logEntry =
-    `[${getTimestamp()}] ` + `${action.toUpperCase()} ` + `- ${message}\n`;
+  const logEntry = `[${getTimestamp()}] ${action.toUpperCase()} | ${message}\n`;
 
-  fs.appendFile(logFile, logEntry, (err) => {
-    if (err) {
-      console.error('Failed to write log:', err.message);
-    }
-  });
+  try {
+    fs.appendFileSync(logFile, logEntry, 'utf8');
+  } catch (err) {
+    console.error('Failed to write log:', err.message);
+  }
 }
 
 module.exports = {

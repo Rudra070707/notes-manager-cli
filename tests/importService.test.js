@@ -1,65 +1,65 @@
-jest.mock("../database/noteRepository", () => ({
+jest.mock('../database/noteRepository', () => ({
   getNoteById: jest.fn(),
   addNote: jest.fn(),
 }));
 
-const fs = require("fs");
+const fs = require('fs');
 
-const repository = require("../database/noteRepository");
+const repository = require('../database/noteRepository');
 
 const {
   importJson,
   importCsv,
   importMarkdown,
-} = require("../services/importService");
+} = require('../services/importService');
 
-describe("importService", () => {
+describe('importService', () => {
   afterEach(() => {
     jest.restoreAllMocks();
     jest.clearAllMocks();
   });
 
-  test("should print message when file does not exist", () => {
-    jest.spyOn(fs, "existsSync").mockReturnValue(false);
+  test('should print message when file does not exist', () => {
+    jest.spyOn(fs, 'existsSync').mockReturnValue(false);
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
-    importJson("missing.json");
+    importJson('missing.json');
 
-    expect(logSpy).toHaveBeenCalledWith("File not found.");
+    expect(logSpy).toHaveBeenCalledWith('File not found.');
   });
 
-  test("should handle invalid JSON", () => {
-    jest.spyOn(fs, "existsSync").mockReturnValue(true);
+  test('should handle invalid JSON', () => {
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
 
-    jest.spyOn(fs, "readFileSync").mockReturnValue("{ invalid json }");
+    jest.spyOn(fs, 'readFileSync').mockReturnValue('{ invalid json }');
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
-    importJson("notes.json");
+    importJson('notes.json');
 
     expect(logSpy).toHaveBeenCalled();
 
     logSpy.mockRestore();
   });
 
-  test("should import a valid JSON note", () => {
+  test('should import a valid JSON note', () => {
     const notes = [
       {
-        id: "1",
-        text: "Learn Jest",
-        priority: "High",
-        tags: ["study"],
-        dueDate: "",
-        recurrence: "",
+        id: '1',
+        text: 'Learn Jest',
+        priority: 'High',
+        tags: ['study'],
+        dueDate: '',
+        recurrence: '',
         completed: false,
-        createdAt: "2026-07-15",
+        createdAt: '2026-07-15',
       },
     ];
 
-    jest.spyOn(fs, "existsSync").mockReturnValue(true);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
 
-    jest.spyOn(fs, "readFileSync").mockReturnValue(JSON.stringify(notes));
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(JSON.stringify(notes));
 
     repository.getNoteById.mockImplementation((id, callback) => {
       callback(null, null);
@@ -69,9 +69,9 @@ describe("importService", () => {
       callback(null);
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
-    importJson("notes.json");
+    importJson('notes.json');
 
     expect(repository.getNoteById).toHaveBeenCalledTimes(1);
     expect(repository.addNote).toHaveBeenCalledTimes(1);
@@ -81,86 +81,86 @@ describe("importService", () => {
       expect.any(Function)
     );
 
-    expect(logSpy).toHaveBeenCalledWith("\n✔ Imported 1 notes");
-    expect(logSpy).toHaveBeenCalledWith("✔ Skipped 0 duplicate notes");
+    expect(logSpy).toHaveBeenCalledWith('\n✔ Imported 1 notes');
+    expect(logSpy).toHaveBeenCalledWith('✔ Skipped 0 duplicate notes');
 
     logSpy.mockRestore();
   });
 
-  test("should skip duplicate notes", () => {
+  test('should skip duplicate notes', () => {
     const notes = [
       {
-        id: "1",
-        text: "Learn Jest",
-        priority: "High",
-        tags: ["study"],
-        dueDate: "",
-        recurrence: "",
+        id: '1',
+        text: 'Learn Jest',
+        priority: 'High',
+        tags: ['study'],
+        dueDate: '',
+        recurrence: '',
         completed: false,
-        createdAt: "2026-07-15",
+        createdAt: '2026-07-15',
       },
     ];
 
-    jest.spyOn(fs, "existsSync").mockReturnValue(true);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
 
-    jest.spyOn(fs, "readFileSync").mockReturnValue(JSON.stringify(notes));
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(JSON.stringify(notes));
 
     repository.getNoteById.mockImplementation((id, callback) => {
       callback(null, notes[0]);
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
-    importJson("notes.json");
+    importJson('notes.json');
 
     expect(repository.getNoteById).toHaveBeenCalledTimes(1);
     expect(repository.addNote).not.toHaveBeenCalled();
 
-    expect(logSpy).toHaveBeenCalledWith("\n✔ Imported 0 notes");
-    expect(logSpy).toHaveBeenCalledWith("✔ Skipped 1 duplicate notes");
+    expect(logSpy).toHaveBeenCalledWith('\n✔ Imported 0 notes');
+    expect(logSpy).toHaveBeenCalledWith('✔ Skipped 1 duplicate notes');
 
     logSpy.mockRestore();
   });
 
-  test("should handle repository lookup error", () => {
+  test('should handle repository lookup error', () => {
     const notes = [
       {
-        id: "1",
-        text: "Learn Jest",
-        priority: "High",
+        id: '1',
+        text: 'Learn Jest',
+        priority: 'High',
         tags: [],
-        dueDate: "",
-        recurrence: "",
+        dueDate: '',
+        recurrence: '',
         completed: false,
-        createdAt: "2026-07-15",
+        createdAt: '2026-07-15',
       },
     ];
 
-    jest.spyOn(fs, "existsSync").mockReturnValue(true);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
 
-    jest.spyOn(fs, "readFileSync").mockReturnValue(JSON.stringify(notes));
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(JSON.stringify(notes));
 
     repository.getNoteById.mockImplementation((id, callback) => {
-      callback(new Error("Database Error"));
+      callback(new Error('Database Error'));
     });
 
-    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    importJson("notes.json");
+    importJson('notes.json');
 
-    expect(errorSpy).toHaveBeenCalledWith("Database Error");
+    expect(errorSpy).toHaveBeenCalledWith('Database Error');
 
     errorSpy.mockRestore();
   });
 
-  test("should import a valid CSV note", () => {
+  test('should import a valid CSV note', () => {
     const csv =
-      "id,text,priority,tags,dueDate,recurrence,completed,createdAt\n" +
+      'id,text,priority,tags,dueDate,recurrence,completed,createdAt\n' +
       '1,"Learn CSV",High,study,,,false,2026-07-15';
 
-    jest.spyOn(fs, "existsSync").mockReturnValue(true);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
 
-    jest.spyOn(fs, "readFileSync").mockReturnValue(csv);
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(csv);
 
     repository.getNoteById.mockImplementation((id, callback) => {
       callback(null, null);
@@ -170,20 +170,20 @@ describe("importService", () => {
       callback(null);
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
-    importCsv("notes.csv");
+    importCsv('notes.csv');
 
     expect(repository.getNoteById).toHaveBeenCalledTimes(1);
     expect(repository.addNote).toHaveBeenCalledTimes(1);
 
-    expect(logSpy).toHaveBeenCalledWith("\n✔ Imported 1 notes");
-    expect(logSpy).toHaveBeenCalledWith("✔ Skipped 0 duplicate notes");
+    expect(logSpy).toHaveBeenCalledWith('\n✔ Imported 1 notes');
+    expect(logSpy).toHaveBeenCalledWith('✔ Skipped 0 duplicate notes');
 
     logSpy.mockRestore();
   });
 
-  test("should import a valid Markdown note", () => {
+  test('should import a valid Markdown note', () => {
     const markdown = `# Notes
 
 ## Learn Markdown
@@ -195,9 +195,9 @@ Recurrence: -
 Tags: study
 Created At: 2026-07-15`;
 
-    jest.spyOn(fs, "existsSync").mockReturnValue(true);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
 
-    jest.spyOn(fs, "readFileSync").mockReturnValue(markdown);
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(markdown);
 
     repository.getNoteById.mockImplementation((id, callback) => {
       callback(null, null);
@@ -207,51 +207,51 @@ Created At: 2026-07-15`;
       callback(null);
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
-    importMarkdown("notes.md");
+    importMarkdown('notes.md');
 
     expect(repository.getNoteById).toHaveBeenCalledTimes(1);
     expect(repository.addNote).toHaveBeenCalledTimes(1);
 
-    expect(logSpy).toHaveBeenCalledWith("\n✔ Imported 1 notes");
-    expect(logSpy).toHaveBeenCalledWith("✔ Skipped 0 duplicate notes");
+    expect(logSpy).toHaveBeenCalledWith('\n✔ Imported 1 notes');
+    expect(logSpy).toHaveBeenCalledWith('✔ Skipped 0 duplicate notes');
 
     logSpy.mockRestore();
   });
-  test("should handle repository add error", () => {
+  test('should handle repository add error', () => {
     const notes = [
       {
         id: 1,
-        text: "Learn Jest",
-        priority: "High",
+        text: 'Learn Jest',
+        priority: 'High',
         tags: [],
-        dueDate: "",
-        recurrence: "",
+        dueDate: '',
+        recurrence: '',
         completed: false,
-        createdAt: "2026-07-15",
+        createdAt: '2026-07-15',
       },
     ];
 
-    jest.spyOn(fs, "existsSync").mockReturnValue(true);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
 
-    jest.spyOn(fs, "readFileSync").mockReturnValue(JSON.stringify(notes));
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(JSON.stringify(notes));
 
     repository.getNoteById.mockImplementation((id, callback) => {
       callback(null, null);
     });
 
     repository.addNote.mockImplementation((note, callback) => {
-      callback(new Error("Insert Failed"));
+      callback(new Error('Insert Failed'));
     });
 
-    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    importJson("notes.json");
+    importJson('notes.json');
 
     expect(repository.addNote).toHaveBeenCalledTimes(1);
 
-    expect(errorSpy).toHaveBeenCalledWith("Insert Failed");
+    expect(errorSpy).toHaveBeenCalledWith('Insert Failed');
 
     errorSpy.mockRestore();
   });

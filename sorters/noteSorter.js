@@ -3,17 +3,27 @@ const PRIORITY_ORDER = {
   medium: 2,
   low: 1,
 };
-function pinnedFirst(a, b) {
-  return Number(b.is_pinned) - Number(a.is_pinned);
+
+function comparePinnedAndFavorite(a, b) {
+  // Pinned notes always come first
+  const pinned = Number(b.is_pinned) - Number(a.is_pinned);
+  if (pinned !== 0) return pinned;
+
+  // Then favorite notes
+  const favorite = Number(b.is_favorite) - Number(a.is_favorite);
+  if (favorite !== 0) return favorite;
+
+  return 0;
 }
+
 function sortNotes(notes, sortBy = 'created') {
   const sorted = [...notes];
 
   switch (sortBy) {
     case 'priority':
       sorted.sort((a, b) => {
-        const pinned = pinnedFirst(a, b);
-        if (pinned !== 0) return pinned;
+        const order = comparePinnedAndFavorite(a, b);
+        if (order !== 0) return order;
 
         return (
           PRIORITY_ORDER[b.priority || 'medium'] -
@@ -24,8 +34,8 @@ function sortNotes(notes, sortBy = 'created') {
 
     case 'status':
       sorted.sort((a, b) => {
-        const pinned = pinnedFirst(a, b);
-        if (pinned !== 0) return pinned;
+        const order = comparePinnedAndFavorite(a, b);
+        if (order !== 0) return order;
 
         return Number(a.completed) - Number(b.completed);
       });
@@ -33,8 +43,8 @@ function sortNotes(notes, sortBy = 'created') {
 
     case 'due':
       sorted.sort((a, b) => {
-        const pinned = pinnedFirst(a, b);
-        if (pinned !== 0) return pinned;
+        const order = comparePinnedAndFavorite(a, b);
+        if (order !== 0) return order;
 
         if (!a.dueDate && !b.dueDate) return 0;
         if (!a.dueDate) return 1;
@@ -47,8 +57,8 @@ function sortNotes(notes, sortBy = 'created') {
     case 'created':
     default:
       sorted.sort((a, b) => {
-        const pinned = pinnedFirst(a, b);
-        if (pinned !== 0) return pinned;
+        const order = comparePinnedAndFavorite(a, b);
+        if (order !== 0) return order;
 
         return new Date(a.createdAt) - new Date(b.createdAt);
       });

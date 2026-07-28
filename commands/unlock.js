@@ -1,5 +1,14 @@
 const { unlockNote } = require('../services/noteService');
 
-module.exports = function (args) {
-  unlockNote(args[0]);
-};
+function execute(ids) {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    console.log('Please provide at least one note ID.');
+    return;
+  }
+
+  ids.forEach((id) => {
+    unlockNote(id);
+  });
+}
+
+module.exports = execute;

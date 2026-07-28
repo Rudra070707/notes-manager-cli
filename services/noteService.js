@@ -8,12 +8,14 @@ const {
   getAllNotes,
   getArchivedNotes,
   getTrashedNotes,
+  getFavoriteNotes,
   getNoteById,
   addNote: addNoteToDB,
   addNoteDirect,
   updateNote: updateNoteInDB,
   setCategory: setCategoryInDB,
   renameCategory: renameCategoryInDB,
+  deleteCategory: deleteCategoryInDB,
   getCategories,
   archiveNote: archiveNoteInDB,
   restoreArchivedNote: restoreArchivedNoteInDB,
@@ -25,6 +27,8 @@ const {
   unlockNote: unlockNoteInDB,
   pinNote: pinNoteInDB,
   unpinNote: unpinNoteInDB,
+  favoriteNote: favoriteNoteInDB,
+  unfavoriteNote: unfavoriteNoteInDB,
   deleteNote: deleteNoteFromDB,
   clearNotes: clearNotesFromDB,
 } = require('../database/noteRepository');
@@ -103,6 +107,7 @@ function addNote(
       is_trashed: false,
       is_locked: false,
       is_pinned: false,
+      is_favorite: false,
       category: category?.trim() || 'General',
       createdAt: new Date().toISOString(),
     };
@@ -133,6 +138,11 @@ function addNote(
 }
 
 function listNotes(options = {}) {
+  if (options.favorite) {
+    listFavoriteNotes();
+    return;
+  }
+
   getAllNotes((err, notes) => {
     if (err) {
       ui.error('✖ Failed to load notes.');
@@ -351,6 +361,7 @@ function completeNote(id) {
           is_trashed: false,
           is_locked: false,
           is_pinned: false,
+          is_favorite: false,
           category: note.category || 'General',
           createdAt: new Date().toISOString(),
         },
@@ -418,21 +429,26 @@ function clearNotes() {
   });
 }
 
-function searchNotes(keyword) {
-  if (!keyword) {
-    ui.error('✖ Please provide a keyword.');
-    return;
-  }
-
+function searchNotes(keyword = '', options = {}) {
   getAllNotes((err, notes) => {
     if (err) {
       ui.error('✖ Failed to load notes.');
       return;
     }
 
-    const results = notes.filter((note) =>
-      note.text.toLowerCase().includes(keyword.toLowerCase())
-    );
+    let results = [...notes];
+
+    if (keyword && keyword.trim()) {
+      const searchText = keyword.trim().toLowerCase();
+
+      results = results.filter((note) =>
+        note.text.toLowerCase().includes(searchText)
+      );
+    }
+
+    results = filterNotes(results, options);
+
+    results = sortNotes(results);
 
     ui.heading('\nSearch Results');
     ui.divider();
@@ -453,20 +469,98 @@ function showStats() {
       return;
     }
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const total = notes.length;
+
     const completed = notes.filter((note) => note.completed).length;
+
     const pending = total - completed;
 
+    const favorites = notes.filter((note) => note.is_favorite).length;
+
+    const pinned = notes.filter((note) => note.is_pinned).length;
+
+    const locked = notes.filter((note) => note.is_locked).length;
+
+    const archived = notes.filter((note) => note.archived).length;
+
+    const trashed = notes.filter((note) => note.is_trashed).length;
+
+    const highPriority = notes.filter(
+      (note) => note.priority === 'high'
+    ).length;
+
+    const mediumPriority = notes.filter(
+      (note) => note.priority === 'medium'
+    ).length;
+
+    const lowPriority = notes.filter((note) => note.priority === 'low').length;
+
+    let dueToday = 0;
+    let overdue = 0;
+
+    notes.forEach((note) => {
+      if (!note.dueDate) return;
+
+      const due = new Date(note.dueDate);
+      due.setHours(0, 0, 0, 0);
+
+      if (due.getTime() === today.getTime()) {
+        dueToday++;
+      }
+
+      if (due < today && !note.completed) {
+        overdue++;
+      }
+    });
+
     const completionRate =
-      total === 0 ? 0 : ((completed / total) * 100).toFixed(2);
+      total === 0 ? '0.00' : ((completed / total) * 100).toFixed(2);
 
-    ui.heading('\nNotes Statistics');
-    ui.divider();
+    ui.heading('\n══════════════════════════════════════════════════════');
+    ui.heading('                 NOTES DASHBOARD');
+    ui.heading('══════════════════════════════════════════════════════');
 
-    console.log(`Total Notes     : ${total}`);
-    console.log(`Completed Notes : ${completed}`);
-    console.log(`Pending Notes   : ${pending}`);
-    console.log(`Completion Rate : ${completionRate}%`);
+    console.log();
+
+    console.log(`📄 Total Notes            : ${total}`);
+
+    console.log();
+
+    console.log(`✅ Completed              : ${completed}`);
+    console.log(`📝 Pending                : ${pending}`);
+
+    console.log();
+
+    console.log(`⭐ Favorite Notes         : ${favorites}`);
+    console.log(`📌 Pinned Notes           : ${pinned}`);
+    console.log(`🔒 Locked Notes           : ${locked}`);
+
+    console.log();
+
+    console.log(`📦 Archived Notes         : ${archived}`);
+    console.log(`🗑 Trashed Notes          : ${trashed}`);
+
+    console.log();
+
+    console.log(`🔴 High Priority          : ${highPriority}`);
+    console.log(`🟡 Medium Priority        : ${mediumPriority}`);
+    console.log(`🟢 Low Priority           : ${lowPriority}`);
+
+    console.log();
+
+    console.log(`📅 Due Today              : ${dueToday}`);
+    console.log(`⚠ Overdue                : ${overdue}`);
+
+    console.log();
+
+    console.log(`📊 Completion Rate        : ${completionRate}%`);
+
+    console.log();
+
+    ui.heading('══════════════════════════════════════════════════════');
   });
 }
 function listCategories() {
@@ -537,7 +631,48 @@ function renameCategory(oldCategory, newCategory) {
     });
   });
 }
+function deleteCategory(category) {
+  if (!category || !category.trim()) {
+    ui.error('✖ Please provide a category.');
+    return;
+  }
 
+  const normalizedCategory = category.trim();
+
+  if (normalizedCategory.toLowerCase() === 'general') {
+    ui.warning('⚠ The General category cannot be deleted.');
+    return;
+  }
+
+  getCategories((err, categories) => {
+    if (err) {
+      ui.error('✖ Failed to load categories.');
+      return;
+    }
+
+    const exists = categories.some(
+      (c) =>
+        c.category &&
+        c.category.toLowerCase() === normalizedCategory.toLowerCase()
+    );
+
+    if (!exists) {
+      ui.warning('⚠ Category not found.');
+      return;
+    }
+
+    deleteCategoryInDB(normalizedCategory, (err) => {
+      if (err) {
+        ui.error('✖ Failed to delete category.');
+        return;
+      }
+
+      logger.log('DELETE_CATEGORY', `${normalizedCategory} -> General`);
+
+      ui.success(`✔ Category deleted. Notes moved to General.`);
+    });
+  });
+}
 function archiveNote(id) {
   getNoteById(Number(id), (err, note) => {
     if (err) {
@@ -614,6 +749,24 @@ function listTrashedNotes() {
 
     if (notes.length === 0) {
       ui.warning('Trash is empty.');
+      return;
+    }
+
+    printNotes(notes);
+  });
+}
+function listFavoriteNotes() {
+  getFavoriteNotes((err, notes) => {
+    if (err) {
+      ui.error('✖ Failed to load favorite notes.');
+      return;
+    }
+
+    ui.heading('\nFavorite Notes');
+    ui.divider();
+
+    if (notes.length === 0) {
+      ui.warning('No favorite notes.');
       return;
     }
 
@@ -889,6 +1042,89 @@ function unpinNote(id) {
     });
   });
 }
+function favoriteNote(id) {
+  getNoteById(Number(id), (err, note) => {
+    if (err) {
+      ui.error('✖ Failed to load note.');
+      return;
+    }
+
+    if (!note) {
+      ui.error('✖ Invalid note ID.');
+      return;
+    }
+
+    if (note.is_favorite) {
+      ui.warning('⚠ Note is already in favorites.');
+      return;
+    }
+
+    favoriteNoteInDB(Number(id), (err) => {
+      if (err) {
+        ui.error('✖ Failed to favorite note.');
+        return;
+      }
+
+      saveUndo(
+        'favorite',
+        {
+          note,
+        },
+        (undoErr) => {
+          if (undoErr) {
+            ui.warning('⚠ Undo history could not be saved.');
+          }
+
+          logger.log('FAVORITE', note.text);
+
+          ui.success(`✔ Added to favorites: ${note.text}`);
+        }
+      );
+    });
+  });
+}
+
+function unfavoriteNote(id) {
+  getNoteById(Number(id), (err, note) => {
+    if (err) {
+      ui.error('✖ Failed to load note.');
+      return;
+    }
+
+    if (!note) {
+      ui.error('✖ Invalid note ID.');
+      return;
+    }
+
+    if (!note.is_favorite) {
+      ui.warning('⚠ Note is not in favorites.');
+      return;
+    }
+
+    unfavoriteNoteInDB(Number(id), (err) => {
+      if (err) {
+        ui.error('✖ Failed to remove favorite.');
+        return;
+      }
+
+      saveUndo(
+        'unfavorite',
+        {
+          note,
+        },
+        (undoErr) => {
+          if (undoErr) {
+            ui.warning('⚠ Undo history could not be saved.');
+          }
+
+          logger.log('UNFAVORITE', note.text);
+
+          ui.success(`✔ Removed from favorites: ${note.text}`);
+        }
+      );
+    });
+  });
+}
 function setCategory(id, category) {
   if (!category || !category.trim()) {
     ui.error('✖ Please provide a category.');
@@ -940,14 +1176,408 @@ function setCategory(id, category) {
     });
   });
 }
+function runDoctor() {
+  getAllNotes((err, notes) => {
+    if (err) {
+      ui.error('✖ Database connection failed.');
+      return;
+    }
+
+    ui.heading('\nSystem Health Check');
+    ui.divider();
+
+    console.log('✔ Database connected');
+    console.log('✔ Notes table accessible');
+
+    const ids = notes.map((note) => note.id);
+    const uniqueIds = new Set(ids);
+
+    if (ids.length === uniqueIds.size) {
+      console.log('✔ No duplicate IDs');
+    } else {
+      console.log('✖ Duplicate IDs detected');
+    }
+
+    const validPriorities = ['low', 'medium', 'high'];
+
+    const invalidPriority = notes.some(
+      (note) => !validPriorities.includes(note.priority)
+    );
+
+    if (invalidPriority) {
+      console.log('✖ Invalid priority values found');
+    } else {
+      console.log('✔ All priorities valid');
+    }
+
+    const validRecurrence = [null, '', 'daily', 'weekly', 'monthly'];
+
+    const invalidRecurrence = notes.some(
+      (note) => !validRecurrence.includes(note.recurrence)
+    );
+
+    if (invalidRecurrence) {
+      console.log('✖ Invalid recurrence values found');
+    } else {
+      console.log('✔ All recurrence values valid');
+    }
+
+    const invalidDueDate = notes.some((note) => {
+      if (!note.dueDate) return false;
+
+      return Number.isNaN(Date.parse(note.dueDate));
+    });
+
+    if (invalidDueDate) {
+      console.log('✖ Invalid due dates found');
+    } else {
+      console.log('✔ All due dates valid');
+    }
+
+    console.log();
+
+    if (
+      ids.length === uniqueIds.size &&
+      !invalidPriority &&
+      !invalidRecurrence &&
+      !invalidDueDate
+    ) {
+      ui.success('✔ Overall Status: Healthy');
+    } else {
+      ui.warning('⚠ Overall Status: Issues Found');
+    }
+  });
+}
+function listTodayNotes() {
+  getAllNotes((err, notes) => {
+    if (err) {
+      ui.error('✖ Failed to load notes.');
+      return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const todayNotes = notes.filter(
+      (note) =>
+        note.dueDate === today &&
+        !note.completed &&
+        !note.archived &&
+        !note.is_trashed
+    );
+
+    ui.heading("\nToday's Notes");
+    ui.divider();
+
+    if (todayNotes.length === 0) {
+      ui.warning('No notes due today.');
+      return;
+    }
+
+    printNotes(todayNotes);
+  });
+}
+function listOverdueNotes() {
+  getAllNotes((err, notes) => {
+    if (err) {
+      ui.error('✖ Failed to load notes.');
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const overdueNotes = notes.filter((note) => {
+      if (!note.dueDate || note.completed || note.archived || note.is_trashed) {
+        return false;
+      }
+
+      const due = new Date(note.dueDate);
+      due.setHours(0, 0, 0, 0);
+
+      return due < today;
+    });
+
+    ui.heading('\nOverdue Notes');
+    ui.divider();
+
+    if (overdueNotes.length === 0) {
+      ui.warning('No overdue notes.');
+      return;
+    }
+
+    printNotes(overdueNotes);
+  });
+}
+function listUpcomingNotes() {
+  getAllNotes((err, notes) => {
+    if (err) {
+      ui.error('✖ Failed to load notes.');
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+
+    const upcomingNotes = notes.filter((note) => {
+      if (!note.dueDate || note.completed || note.archived || note.is_trashed) {
+        return false;
+      }
+
+      const due = new Date(note.dueDate);
+      due.setHours(0, 0, 0, 0);
+
+      return due > today && due <= nextWeek;
+    });
+
+    ui.heading('\nUpcoming Notes');
+    ui.divider();
+
+    if (upcomingNotes.length === 0) {
+      ui.warning('No upcoming notes.');
+      return;
+    }
+
+    printNotes(upcomingNotes);
+  });
+}
+function listRecentNotes() {
+  getAllNotes((err, notes) => {
+    if (err) {
+      ui.error('✖ Failed to load notes.');
+      return;
+    }
+
+    const recentNotes = [...notes]
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+      .slice(0, 10);
+
+    ui.heading('\nRecent Notes');
+    ui.divider();
+
+    if (recentNotes.length === 0) {
+      ui.warning('No notes found.');
+      return;
+    }
+
+    printNotes(recentNotes);
+  });
+}
+function showNextTask() {
+  getAllNotes((err, notes) => {
+    if (err) {
+      ui.error('✖ Failed to load notes.');
+      return;
+    }
+
+    const priorityOrder = {
+      high: 1,
+      medium: 2,
+      low: 3,
+    };
+
+    const pending = notes.filter(
+      (note) => !note.completed && !note.archived && !note.is_trashed
+    );
+
+    if (pending.length === 0) {
+      ui.heading('\nNext Task');
+      ui.divider();
+      ui.warning('No pending tasks.');
+      return;
+    }
+
+    pending.sort((a, b) => {
+      const aHasDue = !!a.dueDate;
+      const bHasDue = !!b.dueDate;
+
+      if (aHasDue && bHasDue) {
+        const dateDiff = new Date(a.dueDate) - new Date(b.dueDate);
+
+        if (dateDiff !== 0) return dateDiff;
+      } else if (aHasDue) {
+        return -1;
+      } else if (bHasDue) {
+        return 1;
+      }
+
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    });
+
+    ui.heading('\nNext Task');
+    ui.divider();
+
+    printNotes([pending[0]]);
+  });
+}
+function generateReport() {
+  getAllNotes((err, notes) => {
+    if (err) {
+      ui.error('✖ Failed to load notes.');
+      return;
+    }
+
+    const total = notes.length;
+
+    const completed = notes.filter((n) => n.completed).length;
+    const pending = total - completed;
+
+    const favorites = notes.filter((n) => n.is_favorite).length;
+    const pinned = notes.filter((n) => n.is_pinned).length;
+    const locked = notes.filter((n) => n.is_locked).length;
+
+    const archived = notes.filter((n) => n.archived).length;
+    const trashed = notes.filter((n) => n.is_trashed).length;
+
+    const completionRate =
+      total === 0 ? '0.00' : ((completed / total) * 100).toFixed(2);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let dueToday = 0;
+    let overdue = 0;
+
+    notes.forEach((note) => {
+      if (!note.dueDate) return;
+
+      const due = new Date(note.dueDate);
+      due.setHours(0, 0, 0, 0);
+
+      if (due.getTime() === today.getTime()) {
+        dueToday++;
+      }
+
+      if (due < today && !note.completed) {
+        overdue++;
+      }
+    });
+
+    const pendingNotes = notes.filter(
+      (note) => !note.completed && !note.archived && !note.is_trashed
+    );
+
+    const priorityRank = {
+      high: 1,
+      medium: 2,
+      low: 3,
+    };
+
+    pendingNotes.sort((a, b) => {
+      return (
+        (priorityRank[a.priority] || 99) - (priorityRank[b.priority] || 99)
+      );
+    });
+
+    const topTask = pendingNotes[0];
+
+    const categoryCount = {};
+
+    notes.forEach((note) => {
+      const category = note.category || 'General';
+
+      categoryCount[category] = (categoryCount[category] || 0) + 1;
+    });
+
+    let topCategory = null;
+
+    Object.entries(categoryCount).forEach(([name, count]) => {
+      if (!topCategory || count > topCategory.count) {
+        topCategory = { name, count };
+      }
+    });
+
+    const tagCount = {};
+
+    notes.forEach((note) => {
+      (note.tags || []).forEach((tag) => {
+        tagCount[tag] = (tagCount[tag] || 0) + 1;
+      });
+    });
+
+    let topTag = null;
+
+    Object.entries(tagCount).forEach(([name, count]) => {
+      if (!topTag || count > topTag.count) {
+        topTag = { name, count };
+      }
+    });
+
+    ui.heading('\n══════════════════════════════════════════════');
+    ui.heading('          PRODUCTIVITY REPORT');
+    ui.heading('══════════════════════════════════════════════');
+
+    console.log();
+
+    console.log(`📄 Total Notes         : ${total}`);
+    console.log(`✅ Completed           : ${completed}`);
+    console.log(`📝 Pending             : ${pending}`);
+
+    console.log();
+
+    console.log(`📊 Completion Rate     : ${completionRate}%`);
+
+    console.log();
+
+    console.log(`⭐ Favorites           : ${favorites}`);
+    console.log(`📌 Pinned             : ${pinned}`);
+    console.log(`🔒 Locked             : ${locked}`);
+
+    console.log();
+
+    console.log(`📦 Archived           : ${archived}`);
+    console.log(`🗑 Trash              : ${trashed}`);
+
+    console.log();
+
+    console.log(`📅 Due Today          : ${dueToday}`);
+    console.log(`⏰ Overdue            : ${overdue}`);
+
+    console.log();
+
+    console.log('🏆 Highest Priority Pending');
+    console.log('--------------------------------------');
+    console.log(topTask ? topTask.text : '-');
+
+    console.log();
+
+    console.log('📂 Most Used Category');
+    console.log('--------------------------------------');
+
+    if (topCategory) {
+      console.log(`${topCategory.name} (${topCategory.count})`);
+    } else {
+      console.log('-');
+    }
+
+    console.log();
+
+    console.log('🏷 Most Used Tag');
+    console.log('--------------------------------------');
+
+    if (topTag) {
+      console.log(`${topTag.name} (${topTag.count})`);
+    } else {
+      console.log('-');
+    }
+
+    console.log();
+
+    ui.heading('══════════════════════════════════════════════');
+  });
+}
 module.exports = {
   addNote,
   listNotes,
   listCategories,
   renameCategory,
+  deleteCategory,
   archiveNote,
   listArchivedNotes,
   listTrashedNotes,
+  listFavoriteNotes,
   restoreTrashedNote,
   emptyTrashBin,
   restoreArchivedNote,
@@ -956,6 +1586,8 @@ module.exports = {
   unlockNote,
   pinNote,
   unpinNote,
+  favoriteNote,
+  unfavoriteNote,
   setCategory,
   deleteNote,
   updateNote,
@@ -964,4 +1596,11 @@ module.exports = {
   clearNotes,
   searchNotes,
   showStats,
+  runDoctor,
+  listTodayNotes,
+  listOverdueNotes,
+  listUpcomingNotes,
+  listRecentNotes,
+  showNextTask,
+  generateReport,
 };

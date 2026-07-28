@@ -1,5 +1,14 @@
 const { lockNote } = require('../services/noteService');
 
-module.exports = function (args) {
-  lockNote(args[0]);
-};
+function execute(ids) {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    console.log('Please provide at least one note ID.');
+    return;
+  }
+
+  ids.forEach((id) => {
+    lockNote(id);
+  });
+}
+
+module.exports = execute;
