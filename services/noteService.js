@@ -430,6 +430,10 @@ function clearNotes() {
 }
 
 function searchNotes(keyword = '', options = {}) {
+  if (!keyword || !keyword.trim()) {
+    ui.error('✖ Please provide a keyword.');
+    return;
+  }
   getAllNotes((err, notes) => {
     if (err) {
       ui.error('✖ Failed to load notes.');
@@ -519,9 +523,8 @@ function showStats() {
     const completionRate =
       total === 0 ? '0.00' : ((completed / total) * 100).toFixed(2);
 
-    ui.heading('\n══════════════════════════════════════════════════════');
-    ui.heading('                 NOTES DASHBOARD');
-    ui.heading('══════════════════════════════════════════════════════');
+    ui.heading('\nNotes Dashboard');
+    ui.divider();
 
     console.log();
 
@@ -559,8 +562,6 @@ function showStats() {
     console.log(`📊 Completion Rate        : ${completionRate}%`);
 
     console.log();
-
-    ui.heading('══════════════════════════════════════════════════════');
   });
 }
 function listCategories() {

@@ -671,11 +671,10 @@ describe('Note Service', () => {
 
     expect(ui.heading).toHaveBeenCalled();
     expect(ui.divider).toHaveBeenCalled();
-
-    expect(logSpy).toHaveBeenCalledWith('Total Notes     : 3');
-    expect(logSpy).toHaveBeenCalledWith('Completed Notes : 2');
-    expect(logSpy).toHaveBeenCalledWith('Pending Notes   : 1');
-    expect(logSpy).toHaveBeenCalledWith('Completion Rate : 66.67%');
+    expect(logSpy).toHaveBeenCalledWith('📄 Total Notes            : 3');
+    expect(logSpy).toHaveBeenCalledWith('✅ Completed              : 2');
+    expect(logSpy).toHaveBeenCalledWith('📝 Pending                : 1');
+    expect(logSpy).toHaveBeenCalledWith('📊 Completion Rate        : 66.67%');
 
     logSpy.mockRestore();
   });
