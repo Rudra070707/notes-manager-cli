@@ -1,6 +1,6 @@
 {
   "name": "notes-manager-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A professional feature-rich command-line Notes Manager built with Node.js, Commander.js, and SQLite.",
   "keywords": [
     "notes",

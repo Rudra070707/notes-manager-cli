@@ -47,10 +47,12 @@ const next = require('./commands/next');
 const report = require('./commands/report');
 const program = new Command();
 
+const packageJson = require('./package.json');
+
 program
   .name('notes')
   .description('Professional Notes Manager CLI')
-  .version('1.0.0');
+  .version(packageJson.version);
 
 program
   .command('add <text>')
