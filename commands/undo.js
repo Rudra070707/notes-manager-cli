@@ -1,5 +1,7 @@
 const { undoLastOperation } = require('../services/undoService');
 
-module.exports = function () {
+function execute() {
   undoLastOperation();
-};
+}
+
+module.exports = execute;

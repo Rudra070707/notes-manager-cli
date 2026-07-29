@@ -30,9 +30,18 @@ function getLastUndo(callback) {
         return;
       }
 
+      let payload;
+
+      try {
+        payload = JSON.parse(row.payload);
+      } catch {
+        callback(new Error('Invalid undo payload.'));
+        return;
+      }
+
       callback(null, {
         ...row,
-        payload: JSON.parse(row.payload),
+        payload,
       });
     }
   );

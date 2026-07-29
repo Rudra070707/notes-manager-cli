@@ -1,11 +1,15 @@
-const PRIORITIES = ['low', 'medium', 'high'];
+const PRIORITIES = Object.freeze(['low', 'medium', 'high']);
 
 function validatePriority(priority) {
   if (!priority) {
     return 'medium';
   }
 
-  const value = priority.toLowerCase().trim();
+  if (typeof priority !== 'string') {
+    return null;
+  }
+
+  const value = priority.trim().toLowerCase();
 
   if (!PRIORITIES.includes(value)) {
     return null;
@@ -14,7 +18,7 @@ function validatePriority(priority) {
   return value;
 }
 
-module.exports = {
+module.exports = Object.freeze({
   PRIORITIES,
   validatePriority,
-};
+});

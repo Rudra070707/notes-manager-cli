@@ -1,5 +1,7 @@
 const backupService = require('../services/backupService');
 
-module.exports = function restoreBackup(args) {
+function restoreBackup(args) {
   backupService.restoreBackup(args[0]);
-};
+}
+
+module.exports = restoreBackup;

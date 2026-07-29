@@ -1,11 +1,16 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const defaultConfig = require('../config/defaultConfig');
 
-const configPath = path.join(__dirname, '..', 'data', 'config.json');
+const dataDir = path.join(__dirname, '..', 'data');
+const configPath = path.join(dataDir, 'config.json');
 
 function ensureConfigExists() {
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+
   if (!fs.existsSync(configPath)) {
     fs.writeFileSync(
       configPath,
@@ -27,6 +32,8 @@ function getConfig() {
 }
 
 function saveConfig(config) {
+  ensureConfigExists();
+
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
 }
 

@@ -1,4 +1,4 @@
-module.exports = {
+module.exports = Object.freeze({
   defaultPriority: 'medium',
 
   defaultExportFormat: 'json',
@@ -16,4 +16,4 @@ module.exports = {
   confirmBeforeClear: true,
 
   colorOutput: true,
-};
+});

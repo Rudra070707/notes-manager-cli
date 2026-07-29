@@ -6,9 +6,9 @@ function execute(ids) {
     return;
   }
 
-  ids.forEach((id) => {
+  for (const id of ids) {
     noteService.uncompleteNote(id);
-  });
+  }
 }
 
 module.exports = execute;

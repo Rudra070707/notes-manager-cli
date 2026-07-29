@@ -14,12 +14,6 @@ const {
 } = require('../database/noteRepository');
 
 describe('Note Repository', () => {
-  beforeEach((done) => {
-    clearNotes((err) => {
-      expect(err).toBeNull();
-      done();
-    });
-  });
   const sampleNote = {
     id: 1,
     text: 'Learn Jest',
@@ -34,6 +28,13 @@ describe('Note Repository', () => {
     is_pinned: false,
     createdAt: new Date().toISOString(),
   };
+
+  beforeEach((done) => {
+    clearNotes((err) => {
+      expect(err).toBeNull();
+      done();
+    });
+  });
 
   test('should add a note', (done) => {
     addNote(sampleNote, (err) => {
@@ -116,9 +117,9 @@ describe('Note Repository', () => {
         restoreArchivedNote(1, (err) => {
           expect(err).toBeNull();
 
-          getArchivedNotes((err, notes) => {
+          getArchivedNotes((err, archivedNotes) => {
             expect(err).toBeNull();
-            expect(notes).toHaveLength(0);
+            expect(archivedNotes).toHaveLength(0);
 
             getAllNotes((err, activeNotes) => {
               expect(err).toBeNull();
@@ -183,6 +184,7 @@ describe('Note Repository', () => {
       });
     });
   });
+
   test('should pin a note', (done) => {
     addNote(sampleNote, (err) => {
       expect(err).toBeNull();
@@ -198,6 +200,7 @@ describe('Note Repository', () => {
       });
     });
   });
+
   test('should unpin a note', (done) => {
     addNote(sampleNote, (err) => {
       expect(err).toBeNull();

@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const repository = require('../database/noteRepository');
 const {
@@ -12,29 +12,34 @@ function importNotes(notes) {
   let imported = 0;
   let skipped = 0;
 
+  function finish() {
+    console.log(`\n✔ Imported ${imported} notes`);
+    console.log(`✔ Skipped ${skipped} duplicate notes`);
+  }
+
   function importNext(index) {
     if (index >= notes.length) {
-      console.log(`\n✔ Imported ${imported} notes`);
-      console.log(`✔ Skipped ${skipped} duplicate notes`);
+      finish();
       return;
     }
 
     const note = notes[index];
 
-    repository.getNoteById(note.id, (err, existingNote) => {
-      if (err) {
-        console.error(err.message);
+    repository.getNoteById(note.id, (lookupError, existingNote) => {
+      if (lookupError) {
+        console.error(lookupError.message);
         return;
       }
 
       if (existingNote) {
         skipped++;
-        return importNext(index + 1);
+        importNext(index + 1);
+        return;
       }
 
-      repository.addNote(note, (err) => {
-        if (err) {
-          console.error(err.message);
+      repository.addNote(note, (insertError) => {
+        if (insertError) {
+          console.error(insertError.message);
         } else {
           imported++;
         }
@@ -47,20 +52,28 @@ function importNotes(notes) {
   importNext(0);
 }
 
-function importJson(filePath) {
+function readNotes(filePath, parser) {
   const absolutePath = path.resolve(filePath);
 
   if (!fs.existsSync(absolutePath)) {
     console.log('File not found.');
-    return;
+    return null;
   }
 
-  let notes;
-
   try {
-    notes = parseJson(fs.readFileSync(absolutePath, 'utf8'));
+    const fileContent = fs.readFileSync(absolutePath, 'utf8');
+
+    return parser(fileContent);
   } catch (error) {
     console.log(error.message);
+    return null;
+  }
+}
+
+function importJson(filePath) {
+  const notes = readNotes(filePath, parseJson);
+
+  if (!notes) {
     return;
   }
 
@@ -68,19 +81,9 @@ function importJson(filePath) {
 }
 
 function importCsv(filePath) {
-  const absolutePath = path.resolve(filePath);
+  const notes = readNotes(filePath, parseCsv);
 
-  if (!fs.existsSync(absolutePath)) {
-    console.log('File not found.');
-    return;
-  }
-
-  let notes;
-
-  try {
-    notes = parseCsv(fs.readFileSync(absolutePath, 'utf8'));
-  } catch (error) {
-    console.log(error.message);
+  if (!notes) {
     return;
   }
 
@@ -88,19 +91,9 @@ function importCsv(filePath) {
 }
 
 function importMarkdown(filePath) {
-  const absolutePath = path.resolve(filePath);
+  const notes = readNotes(filePath, parseMarkdown);
 
-  if (!fs.existsSync(absolutePath)) {
-    console.log('File not found.');
-    return;
-  }
-
-  let notes;
-
-  try {
-    notes = parseMarkdown(fs.readFileSync(absolutePath, 'utf8'));
-  } catch (error) {
-    console.log(error.message);
+  if (!notes) {
     return;
   }
 

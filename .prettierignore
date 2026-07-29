@@ -1,4 +1,5 @@
 node_modules
 coverage
-exports
-package-lock.json
+archive
+backups
+logs

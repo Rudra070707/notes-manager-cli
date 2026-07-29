@@ -1,5 +1,7 @@
 const { listFavoriteNotes } = require('../services/noteService');
 
-module.exports = function () {
+function execute() {
   listFavoriteNotes();
-};
+}
+
+module.exports = execute;

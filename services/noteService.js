@@ -428,7 +428,7 @@ function clearNotes() {
 }
 
 function searchNotes(keyword = '', options = {}) {
-  if (!keyword || !keyword.trim()) {
+  if (!keyword?.trim()) {
     ui.error('✖ Please provide a keyword.');
     return;
   }
@@ -440,7 +440,7 @@ function searchNotes(keyword = '', options = {}) {
 
     let results = [...notes];
 
-    if (keyword && keyword.trim()) {
+    if (keyword?.trim()) {
       const searchText = keyword.trim().toLowerCase();
 
       results = results.filter((note) =>
@@ -583,12 +583,12 @@ function listCategories() {
   });
 }
 function renameCategory(oldCategory, newCategory) {
-  if (!oldCategory || !oldCategory.trim()) {
+  if (!oldCategory?.trim()) {
     ui.error('✖ Please provide the current category.');
     return;
   }
 
-  if (!newCategory || !newCategory.trim()) {
+  if (!newCategory?.trim()) {
     ui.error('✖ Please provide the new category.');
     return;
   }
@@ -631,7 +631,7 @@ function renameCategory(oldCategory, newCategory) {
   });
 }
 function deleteCategory(category) {
-  if (!category || !category.trim()) {
+  if (!category?.trim()) {
     ui.error('✖ Please provide a category.');
     return;
   }
@@ -1125,7 +1125,7 @@ function unfavoriteNote(id) {
   });
 }
 function setCategory(id, category) {
-  if (!category || !category.trim()) {
+  if (!category?.trim()) {
     ui.error('✖ Please provide a category.');
     return;
   }
@@ -1197,10 +1197,10 @@ function runDoctor() {
       console.log('✖ Duplicate IDs detected');
     }
 
-    const validPriorities = ['low', 'medium', 'high'];
+    const validPriorities = new Set(['low', 'medium', 'high']);
 
     const invalidPriority = notes.some(
-      (note) => !validPriorities.includes(note.priority)
+      (note) => !validPriorities.has(note.priority)
     );
 
     if (invalidPriority) {
@@ -1209,10 +1209,10 @@ function runDoctor() {
       console.log('✔ All priorities valid');
     }
 
-    const validRecurrence = [null, '', 'daily', 'weekly', 'monthly'];
+    const validRecurrence = new Set([null, '', 'daily', 'weekly', 'monthly']);
 
     const invalidRecurrence = notes.some(
-      (note) => !validRecurrence.includes(note.recurrence)
+      (note) => !validRecurrence.has(note.recurrence)
     );
 
     if (invalidRecurrence) {

@@ -9,7 +9,7 @@ const {
 
 const ui = require('../ui/colors');
 
-module.exports = async function (args) {
+async function execute(args) {
   const action = args[0];
 
   switch (action) {
@@ -75,4 +75,6 @@ module.exports = async function (args) {
       console.log('notes security status');
       console.log('notes security remove');
   }
-};
+}
+
+module.exports = execute;

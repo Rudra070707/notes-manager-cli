@@ -8,6 +8,11 @@ const {
   getTimestamp,
 } = require('../services/backupService');
 
+const REMOVE_OPTIONS = {
+  recursive: true,
+  force: true,
+};
+
 describe('Backup Service', () => {
   beforeAll(() => {
     if (!fs.existsSync(databasePath)) {
@@ -18,10 +23,7 @@ describe('Backup Service', () => {
 
   afterAll(() => {
     if (fs.existsSync(backupDirectory)) {
-      fs.rmSync(backupDirectory, {
-        recursive: true,
-        force: true,
-      });
+      fs.rmSync(backupDirectory, REMOVE_OPTIONS);
     }
   });
 
@@ -33,10 +35,7 @@ describe('Backup Service', () => {
 
   test('should create backup directory', () => {
     if (fs.existsSync(backupDirectory)) {
-      fs.rmSync(backupDirectory, {
-        recursive: true,
-        force: true,
-      });
+      fs.rmSync(backupDirectory, REMOVE_OPTIONS);
     }
 
     expect(fs.existsSync(backupDirectory)).toBe(false);

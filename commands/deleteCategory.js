@@ -1,5 +1,7 @@
 const { deleteCategory } = require('../services/noteService');
 
-module.exports = function (args) {
+function execute(args) {
   deleteCategory(args[0]);
-};
+}
+
+module.exports = execute;

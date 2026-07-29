@@ -2,7 +2,7 @@ function parseJson(content) {
   const notes = JSON.parse(content);
 
   if (!Array.isArray(notes)) {
-    throw new Error('Invalid JSON format.');
+    throw new TypeError('Invalid JSON format.');
   }
 
   return notes;
@@ -18,7 +18,7 @@ function parseCsv(content) {
 
     return {
       id: Number(parts[0]),
-      text: parts[1].replace(/^"|"$/g, '').replace(/""/g, '"'),
+      text: parts[1].replace(/^"|"$/g, '').replaceAll('""', '"'),
       priority: parts[2],
       tags: parts[3]
         ? parts[3].replace(/^"|"$/g, '').split(';').filter(Boolean)
@@ -40,7 +40,7 @@ function parseMarkdown(content) {
       .map((line) => line.trim())
       .filter((line) => line !== '');
 
-    const text = lines[0];
+    const text = lines[0].trim();
 
     const getValue = (line) => line.substring(line.indexOf(':') + 2);
 
@@ -60,8 +60,8 @@ function parseMarkdown(content) {
   });
 }
 
-module.exports = {
+module.exports = Object.freeze({
   parseJson,
   parseCsv,
   parseMarkdown,
-};
+});

@@ -1,6 +1,8 @@
 const chalk = require('chalk');
 
-module.exports = {
+const DIVIDER = '--------------------------------------';
+
+module.exports = Object.freeze({
   success: (text) => console.log(chalk.green(text)),
 
   error: (text) => console.log(chalk.red(text)),
@@ -11,8 +13,7 @@ module.exports = {
 
   heading: (text) => console.log(chalk.blue.bold(text)),
 
-  divider: () =>
-    console.log(chalk.gray('--------------------------------------')),
+  divider: () => console.log(chalk.gray(DIVIDER)),
 
   normal: (text) => console.log(text),
-};
+});

@@ -1,6 +1,6 @@
 const { clearNotes } = require('../services/noteService');
 
-module.exports = async function () {
+async function execute() {
   const { default: inquirer } = await import('inquirer');
 
   const { confirm } = await inquirer.prompt([
@@ -18,4 +18,6 @@ module.exports = async function () {
   }
 
   clearNotes();
-};
+}
+
+module.exports = execute;

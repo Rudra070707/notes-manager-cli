@@ -15,6 +15,7 @@ jest.mock('../database/noteRepository', () => ({
   getAllNotes: jest.fn(),
   getArchivedNotes: jest.fn(),
   getTrashedNotes: jest.fn(),
+  getFavoriteNotes: jest.fn(),
   getNoteById: jest.fn(),
 
   addNote: jest.fn(),
@@ -47,6 +48,9 @@ jest.mock('../database/undoRepository', () => ({
   getLastUndo: jest.fn(),
   deleteLastUndo: jest.fn(),
 }));
+jest.mock('../services/loggerService', () => ({
+  log: jest.fn(),
+}));
 const ui = require('../ui/colors');
 const { printNotes } = require('../ui/table');
 const repository = require('../database/noteRepository');
@@ -55,6 +59,12 @@ const service = require('../services/noteService');
 
 beforeEach(() => {
   jest.clearAllMocks();
+
+  undoRepository.saveUndo.mockImplementation((operation, payload, callback) => {
+    if (typeof callback === 'function') {
+      callback(null);
+    }
+  });
 });
 
 describe('Note Service', () => {
@@ -66,11 +76,7 @@ describe('Note Service', () => {
     repository.addNote.mockImplementation((note, callback) => {
       callback(null);
     });
-    undoRepository.saveUndo.mockImplementation(
-      (operation, payload, callback) => {
-        callback(null);
-      }
-    );
+
     service.addNote('Learn Express');
 
     expect(repository.getAllNotes).toHaveBeenCalledTimes(1);
@@ -175,9 +181,6 @@ describe('Note Service', () => {
     expect(ui.divider).toHaveBeenCalled();
     expect(printNotes).toHaveBeenCalledWith(notes);
   });
-  // ...keep all your existing mocks and the first 9 tests exactly as they are...
-
-  // Add these three tests inside the same describe("Note Service", () => {
 
   test('should reject deleting an invalid note ID', () => {
     repository.getNoteById.mockImplementation((id, callback) => {
@@ -231,6 +234,7 @@ describe('Note Service', () => {
 
     expect(ui.success).toHaveBeenCalledWith('✔ Moved to Trash: Learn Express');
   });
+
   test('should reject updating with empty text', () => {
     service.updateNote(1, '');
 
@@ -310,6 +314,7 @@ describe('Note Service', () => {
 
     logSpy.mockRestore();
   });
+
   test('should reject completing an invalid note ID', () => {
     repository.getAllNotes.mockImplementation((callback) => {
       callback(null, []);
@@ -376,6 +381,7 @@ describe('Note Service', () => {
 
     expect(ui.success).toHaveBeenCalledWith('✔ Completed: Learn Express');
   });
+
   test('should create the next daily recurring note', () => {
     const notes = [
       {
@@ -419,6 +425,7 @@ describe('Note Service', () => {
 
     expect(ui.success).toHaveBeenCalledWith('✔ Completed: Workout');
   });
+
   test('should create the next weekly recurring note', () => {
     const notes = [
       {
@@ -457,6 +464,7 @@ describe('Note Service', () => {
       expect.any(Function)
     );
   });
+
   test('should create the next monthly recurring note', () => {
     const notes = [
       {
@@ -495,6 +503,7 @@ describe('Note Service', () => {
       expect.any(Function)
     );
   });
+
   test('should reject uncompleting an invalid note ID', () => {
     repository.getNoteById.mockImplementation((id, callback) => {
       callback(null, null);
@@ -555,6 +564,7 @@ describe('Note Service', () => {
       '✔ Marked as pending: Learn Express'
     );
   });
+
   test('should handle database error while clearing notes', () => {
     repository.clearNotes.mockImplementation((callback) => {
       callback(new Error('DB Error'));
@@ -576,6 +586,7 @@ describe('Note Service', () => {
 
     expect(ui.success).toHaveBeenCalledWith('✔ All notes have been deleted.');
   });
+
   test('should reject searching with an empty keyword', () => {
     service.searchNotes('');
 
@@ -635,6 +646,7 @@ describe('Note Service', () => {
 
     expect(printNotes).toHaveBeenCalledWith([notes[0]]);
   });
+
   test('should handle database error while showing statistics', () => {
     repository.getAllNotes.mockImplementation((callback) => {
       callback(new Error('DB Error'));
@@ -643,6 +655,73 @@ describe('Note Service', () => {
     service.showStats();
 
     expect(ui.error).toHaveBeenCalledWith('✖ Failed to load notes.');
+  });
+
+  test('should generate report', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(null, [
+        {
+          id: 1,
+          completed: true,
+          priority: 'high',
+        },
+      ]);
+    });
+
+    const spy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    service.generateReport();
+
+    expect(repository.getAllNotes).toHaveBeenCalledTimes(1);
+
+    spy.mockRestore();
+  });
+
+  test('should show next task', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(null, [
+        {
+          id: 1,
+          text: 'Study',
+          priority: 'high',
+          completed: false,
+        },
+      ]);
+    });
+
+    service.showNextTask();
+
+    expect(repository.getAllNotes).toHaveBeenCalledTimes(1);
+  });
+
+  test('should show today notes', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(null, []);
+    });
+
+    service.listTodayNotes();
+
+    expect(repository.getAllNotes).toHaveBeenCalledTimes(1);
+  });
+
+  test('should show upcoming notes', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(null, []);
+    });
+
+    service.listUpcomingNotes();
+
+    expect(repository.getAllNotes).toHaveBeenCalledTimes(1);
+  });
+
+  test('should show overdue notes', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(null, []);
+    });
+
+    service.listOverdueNotes();
+
+    expect(repository.getAllNotes).toHaveBeenCalledTimes(1);
   });
 
   test('should display note statistics', () => {
@@ -678,6 +757,7 @@ describe('Note Service', () => {
 
     logSpy.mockRestore();
   });
+
   test('should archive a note successfully', () => {
     const note = {
       id: 1,
@@ -759,6 +839,7 @@ describe('Note Service', () => {
 
     expect(ui.success).toHaveBeenCalledWith('✔ Archived notes cleared.');
   });
+
   test('should list trashed notes', () => {
     const notes = [
       {
@@ -777,6 +858,7 @@ describe('Note Service', () => {
     expect(repository.getTrashedNotes).toHaveBeenCalledTimes(1);
     expect(printNotes).toHaveBeenCalledWith(notes);
   });
+
   test('should restore a trashed note', () => {
     const note = {
       id: 1,
@@ -792,10 +874,6 @@ describe('Note Service', () => {
       callback(null);
     });
 
-    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
-      callback(null);
-    });
-
     service.restoreTrashedNote(1);
 
     expect(repository.restoreFromTrash).toHaveBeenCalledWith(
@@ -807,6 +885,7 @@ describe('Note Service', () => {
       '✔ Restored from Trash: Deleted Note'
     );
   });
+
   test('should empty trash successfully', () => {
     repository.emptyTrash.mockImplementation((callback) => {
       callback(null);
@@ -818,6 +897,7 @@ describe('Note Service', () => {
 
     expect(ui.success).toHaveBeenCalledWith('✔ Trash emptied successfully.');
   });
+
   test('should lock a note successfully', () => {
     const note = {
       id: 1,
@@ -833,16 +913,13 @@ describe('Note Service', () => {
       callback(null);
     });
 
-    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
-      callback(null);
-    });
-
     service.lockNote(1);
 
     expect(repository.lockNote).toHaveBeenCalledWith(1, expect.any(Function));
 
     expect(ui.success).toHaveBeenCalledWith('✔ Locked: Learn Express');
   });
+
   test('should unlock a note successfully', () => {
     const note = {
       id: 1,
@@ -858,16 +935,13 @@ describe('Note Service', () => {
       callback(null);
     });
 
-    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
-      callback(null);
-    });
-
     service.unlockNote(1);
 
     expect(repository.unlockNote).toHaveBeenCalledWith(1, expect.any(Function));
 
     expect(ui.success).toHaveBeenCalledWith('✔ Unlocked: Learn Express');
   });
+
   test('should pin a note successfully', () => {
     const note = {
       id: 1,
@@ -883,16 +957,13 @@ describe('Note Service', () => {
       callback(null);
     });
 
-    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
-      callback(null);
-    });
-
     service.pinNote(1);
 
     expect(repository.pinNote).toHaveBeenCalledWith(1, expect.any(Function));
 
     expect(ui.success).toHaveBeenCalledWith('✔ Pinned: Learn Express');
   });
+
   test('should unpin a note successfully', () => {
     const note = {
       id: 1,
@@ -908,16 +979,13 @@ describe('Note Service', () => {
       callback(null);
     });
 
-    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
-      callback(null);
-    });
-
     service.unpinNote(1);
 
     expect(repository.unpinNote).toHaveBeenCalledWith(1, expect.any(Function));
 
     expect(ui.success).toHaveBeenCalledWith('✔ Unpinned: Learn Express');
   });
+
   test('should reject pinning an already pinned note', () => {
     repository.getNoteById.mockImplementation((id, callback) => {
       callback(null, {
@@ -933,6 +1001,7 @@ describe('Note Service', () => {
 
     expect(ui.warning).toHaveBeenCalledWith('⚠ Note is already pinned.');
   });
+
   test('should reject unpinning an unpinned note', () => {
     repository.getNoteById.mockImplementation((id, callback) => {
       callback(null, {
@@ -948,6 +1017,7 @@ describe('Note Service', () => {
 
     expect(ui.warning).toHaveBeenCalledWith('⚠ Note is not pinned.');
   });
+
   test('should reject locking an already locked note', () => {
     const note = {
       id: 1,
@@ -965,6 +1035,7 @@ describe('Note Service', () => {
 
     expect(ui.warning).toHaveBeenCalledWith('⚠ Note is already locked.');
   });
+
   test('should reject unlocking an unlocked note', () => {
     const note = {
       id: 1,
@@ -982,6 +1053,7 @@ describe('Note Service', () => {
 
     expect(ui.warning).toHaveBeenCalledWith('⚠ Note is not locked.');
   });
+
   test('should reject updating a locked note', () => {
     repository.getAllNotes.mockImplementation((callback) => {
       callback(null, [
@@ -999,6 +1071,7 @@ describe('Note Service', () => {
 
     expect(ui.warning).toHaveBeenCalledWith('⚠ Note is locked.');
   });
+
   test('should reject deleting a locked note', () => {
     repository.getNoteById.mockImplementation((id, callback) => {
       callback(null, {
@@ -1014,6 +1087,7 @@ describe('Note Service', () => {
 
     expect(ui.warning).toHaveBeenCalledWith('⚠ Note is locked.');
   });
+
   test('should reject archiving a locked note', () => {
     repository.getNoteById.mockImplementation((id, callback) => {
       callback(null, {
@@ -1030,6 +1104,7 @@ describe('Note Service', () => {
 
     expect(ui.warning).toHaveBeenCalledWith('⚠ Note is locked.');
   });
+
   test('should reject completing a locked note', () => {
     repository.getAllNotes.mockImplementation((callback) => {
       callback(null, [
@@ -1048,6 +1123,7 @@ describe('Note Service', () => {
 
     expect(ui.warning).toHaveBeenCalledWith('⚠ Note is locked.');
   });
+
   test('should reject uncompleting a locked note', () => {
     repository.getNoteById.mockImplementation((id, callback) => {
       callback(null, {
@@ -1064,6 +1140,7 @@ describe('Note Service', () => {
 
     expect(ui.warning).toHaveBeenCalledWith('⚠ Note is locked.');
   });
+
   test('should delete a category successfully', () => {
     repository.getCategories.mockImplementation((callback) => {
       callback(null, [
@@ -1090,6 +1167,7 @@ describe('Note Service', () => {
       '✔ Category deleted. Notes moved to General.'
     );
   });
+
   test('should change a note category successfully', () => {
     const note = {
       id: 1,
@@ -1119,6 +1197,7 @@ describe('Note Service', () => {
       '✔ Category changed to: Programming'
     );
   });
+
   test('should rename a category successfully', () => {
     repository.getCategories.mockImplementation((callback) => {
       callback(null, [
@@ -1144,6 +1223,7 @@ describe('Note Service', () => {
 
     expect(ui.success).toHaveBeenCalledWith('✔ Category renamed to: Coding');
   });
+
   test('should reject renaming a missing category', () => {
     repository.getCategories.mockImplementation((callback) => {
       callback(null, []);
@@ -1155,6 +1235,7 @@ describe('Note Service', () => {
 
     expect(ui.warning).toHaveBeenCalledWith('⚠ Category not found.');
   });
+
   test('should favorite a note successfully', () => {
     const note = {
       id: 1,
@@ -1167,10 +1248,6 @@ describe('Note Service', () => {
     });
 
     repository.favoriteNote.mockImplementation((id, callback) => {
-      callback(null);
-    });
-
-    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
       callback(null);
     });
 
@@ -1229,10 +1306,6 @@ describe('Note Service', () => {
       callback(null);
     });
 
-    undoRepository.saveUndo.mockImplementation((op, payload, callback) => {
-      callback(null);
-    });
-
     service.unfavoriteNote(1);
 
     expect(repository.unfavoriteNote).toHaveBeenCalledWith(
@@ -1271,5 +1344,185 @@ describe('Note Service', () => {
     expect(repository.unfavoriteNote).not.toHaveBeenCalled();
 
     expect(ui.error).toHaveBeenCalledWith('✖ Invalid note ID.');
+  });
+
+  test('doctor should report healthy database', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(null, [
+        {
+          id: 1,
+          priority: 'medium',
+          recurrence: null,
+        },
+      ]);
+    });
+
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    service.runDoctor();
+
+    expect(repository.getAllNotes).toHaveBeenCalledTimes(1);
+
+    logSpy.mockRestore();
+  });
+
+  test('doctor should handle database error', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(new Error('DB Error'));
+    });
+
+    service.runDoctor();
+
+    expect(ui.error).toHaveBeenCalledWith('✖ Database connection failed.');
+  });
+
+  test('doctor should detect duplicate IDs', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(null, [
+        { id: 1, priority: 'medium', recurrence: null },
+        { id: 1, priority: 'high', recurrence: null },
+      ]);
+    });
+
+    const spy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    service.runDoctor();
+
+    expect(repository.getAllNotes).toHaveBeenCalledTimes(1);
+
+    spy.mockRestore();
+  });
+
+  test('doctor should detect invalid priorities', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(null, [
+        {
+          id: 1,
+          priority: 'super-high',
+          recurrence: null,
+        },
+      ]);
+    });
+
+    const spy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    service.runDoctor();
+
+    expect(repository.getAllNotes).toHaveBeenCalledTimes(1);
+
+    spy.mockRestore();
+  });
+
+  test('doctor should detect invalid recurrence', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(null, [
+        {
+          id: 1,
+          priority: 'medium',
+          recurrence: 'yearly',
+        },
+      ]);
+    });
+
+    const spy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    service.runDoctor();
+
+    expect(repository.getAllNotes).toHaveBeenCalledTimes(1);
+
+    spy.mockRestore();
+  });
+
+  test('should show warning when no favorite notes exist', () => {
+    repository.getFavoriteNotes.mockImplementation((callback) => {
+      callback(null, []);
+    });
+
+    service.listFavoriteNotes();
+
+    expect(ui.warning).toHaveBeenCalledWith('No favorite notes.');
+  });
+
+  test('should list favorite notes', () => {
+    const notes = [
+      {
+        id: 1,
+        text: 'Learn Express',
+        is_favorite: true,
+      },
+    ];
+
+    repository.getFavoriteNotes.mockImplementation((callback) => {
+      callback(null, notes);
+    });
+
+    service.listFavoriteNotes();
+
+    expect(printNotes).toHaveBeenCalledWith(notes);
+  });
+
+  test('should list recent notes', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(null, [
+        {
+          id: 1,
+          text: 'A',
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    });
+
+    service.listRecentNotes();
+
+    expect(printNotes).toHaveBeenCalled();
+  });
+
+  test('should show warning when categories are empty', () => {
+    repository.getCategories.mockImplementation((callback) => {
+      callback(null, []);
+    });
+
+    service.listCategories();
+
+    expect(ui.warning).toHaveBeenCalledWith('No categories found.');
+  });
+
+  test('should list categories', () => {
+    repository.getCategories.mockImplementation((callback) => {
+      callback(null, [
+        {
+          category: 'Work',
+          count: 5,
+        },
+      ]);
+    });
+
+    const spy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    service.listCategories();
+
+    expect(spy).toHaveBeenCalled();
+
+    spy.mockRestore();
+  });
+
+  test('should show warning when there are no favorite notes', () => {
+    repository.getFavoriteNotes.mockImplementation((callback) => {
+      callback(null, []);
+    });
+
+    service.listFavoriteNotes();
+
+    expect(ui.warning).toHaveBeenCalledWith('No favorite notes.');
+  });
+
+  test('should show warning when no recent notes exist', () => {
+    repository.getAllNotes.mockImplementation((callback) => {
+      callback(null, []);
+    });
+
+    service.listRecentNotes();
+
+    expect(ui.warning).toHaveBeenCalledWith('No notes found.');
   });
 });

@@ -1,3 +1,5 @@
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
 function validateDueDate(dueDate) {
   if (!dueDate) {
     return null;
@@ -7,9 +9,9 @@ function validateDueDate(dueDate) {
     return null;
   }
 
-  const regex = /^\d{4}-\d{2}-\d{2}$/;
+  dueDate = dueDate.trim();
 
-  if (!regex.test(dueDate)) {
+  if (!DATE_REGEX.test(dueDate)) {
     return null;
   }
 
@@ -32,6 +34,6 @@ function validateDueDate(dueDate) {
   return dueDate;
 }
 
-module.exports = {
+module.exports = Object.freeze({
   validateDueDate,
-};
+});

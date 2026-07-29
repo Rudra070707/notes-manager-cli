@@ -1,4 +1,4 @@
-const schema = {
+const schema = Object.freeze({
   defaultPriority: {
     type: 'enum',
     values: ['low', 'medium', 'high'],
@@ -38,50 +38,69 @@ const schema = {
   colorOutput: {
     type: 'boolean',
   },
-};
+});
+
+function parseBoolean(value) {
+  if (value === 'true') {
+    return true;
+  }
+
+  if (value === 'false') {
+    return false;
+  }
+
+  throw new TypeError('Expected true or false.');
+}
+
+function parseNumber(value, rule) {
+  const number = Number(value);
+
+  if (Number.isNaN(number)) {
+    throw new TypeError('Expected a number.');
+  }
+
+  if (rule.min !== undefined && number < rule.min) {
+    throw new RangeError(`Minimum value is ${rule.min}.`);
+  }
+
+  if (rule.max !== undefined && number > rule.max) {
+    throw new RangeError(`Maximum value is ${rule.max}.`);
+  }
+
+  return number;
+}
+
+function parseEnum(value, rule) {
+  if (!rule.values.includes(value)) {
+    throw new RangeError(`Allowed values: ${rule.values.join(', ')}`);
+  }
+
+  return value;
+}
 
 function parseValue(key, value) {
   const rule = schema[key];
 
   if (!rule) {
-    throw new Error('Unknown configuration key.');
+    throw new ReferenceError('Unknown configuration key.');
   }
 
   switch (rule.type) {
     case 'boolean':
-      if (value === 'true') return true;
-      if (value === 'false') return false;
-      throw new Error('Expected true or false.');
+      return parseBoolean(value);
 
-    case 'number': {
-      const number = Number(value);
-
-      if (Number.isNaN(number)) {
-        throw new Error('Expected a number.');
-      }
-
-      if (rule.min !== undefined && number < rule.min) {
-        throw new Error(`Minimum value is ${rule.min}.`);
-      }
-
-      if (rule.max !== undefined && number > rule.max) {
-        throw new Error(`Maximum value is ${rule.max}.`);
-      }
-
-      return number;
-    }
+    case 'number':
+      return parseNumber(value, rule);
 
     case 'enum':
-      if (!rule.values.includes(value)) {
-        throw new Error(`Allowed values: ${rule.values.join(', ')}`);
-      }
-      return value;
+      return parseEnum(value, rule);
 
+    case 'string':
     default:
       return value;
   }
 }
 
-module.exports = {
+module.exports = Object.freeze({
   parseValue,
-};
+});

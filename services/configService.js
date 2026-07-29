@@ -16,7 +16,7 @@ function listConfig() {
 function getValue(key) {
   const config = repository.getConfig();
 
-  if (!(key in config)) {
+  if (!Object.hasOwn(config, key)) {
     ui.error('✖ Configuration key not found.');
     return;
   }
@@ -27,7 +27,7 @@ function getValue(key) {
 function setValue(key, value) {
   const config = repository.getConfig();
 
-  if (!(key in config)) {
+  if (!Object.hasOwn(config, key)) {
     ui.error('✖ Configuration key not found.');
     return;
   }
@@ -51,9 +51,9 @@ function resetConfig() {
   ui.success('✔ Configuration reset successfully.');
 }
 
-module.exports = {
+module.exports = Object.freeze({
   listConfig,
   getValue,
   setValue,
   resetConfig,
-};
+});

@@ -1,5 +1,7 @@
 const { restoreTrashedNote } = require('../services/noteService');
 
-module.exports = (args) => {
+function execute(args) {
   restoreTrashedNote(args[0]);
-};
+}
+
+module.exports = execute;

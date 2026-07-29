@@ -2,55 +2,53 @@ const { getLogs, clearLogs } = require('../database/logRepository');
 const ui = require('../ui/colors');
 
 function showHistory(options = {}) {
+  const { today = false, type, search, limit } = options;
+
   let logs = getLogs();
 
   ui.heading('\nHistory');
   ui.divider();
 
-  if (!logs || logs.length === 0) {
+  if (!Array.isArray(logs) || logs.length === 0) {
     ui.warning('No history available.');
     return;
   }
 
-  /* -------------------------
-     Show today's history
-  ------------------------- */
-  if (options.today) {
-    const today = new Date().toISOString().slice(0, 10);
+  if (today) {
+    const todayDate = new Date().toISOString().slice(0, 10);
 
-    logs = logs.filter((log) => log.includes(today));
+    logs = logs.filter((log) => log.includes(todayDate));
   }
 
-  /* -------------------------
-     Filter by action type
-  ------------------------- */
-  if (options.type) {
-    const type = options.type.trim().toUpperCase();
+  if (type) {
+    const filterType = String(type).trim().toUpperCase();
 
-    logs = logs.filter((log) => log.toUpperCase().includes(type));
+    logs = logs.filter((log) => {
+      const upperLog = log.toUpperCase();
+
+      return upperLog.includes(filterType);
+    });
   }
 
-  /* -------------------------
-     Search history
-  ------------------------- */
-  if (options.search) {
-    const keyword = options.search.trim().toLowerCase();
+  if (search) {
+    const keyword = String(search).trim().toLowerCase();
 
-    logs = logs.filter((log) => log.toLowerCase().includes(keyword));
+    logs = logs.filter((log) => {
+      const lowerLog = log.toLowerCase();
+
+      return lowerLog.includes(keyword);
+    });
   }
 
-  /* -------------------------
-     Limit results
-  ------------------------- */
-  if (options.limit !== undefined) {
-    const limit = Number(options.limit);
+  if (limit !== undefined) {
+    const parsedLimit = Number(limit);
 
-    if (Number.isNaN(limit) || limit <= 0) {
-      ui.error('✖ Limit must be a positive number.');
+    if (!Number.isInteger(parsedLimit) || parsedLimit <= 0) {
+      ui.error('✖ Limit must be a positive integer.');
       return;
     }
 
-    logs = logs.slice(0, limit);
+    logs = logs.slice(0, parsedLimit);
   }
 
   if (logs.length === 0) {
@@ -67,8 +65,8 @@ function clearHistory() {
   try {
     clearLogs();
     ui.success('✔ History cleared successfully.');
-  } catch {
-    ui.error('✖ Failed to clear history.');
+  } catch (error) {
+    ui.error(`✖ Failed to clear history. ${error.message}`);
   }
 }
 

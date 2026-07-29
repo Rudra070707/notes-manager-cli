@@ -4,8 +4,8 @@ jest.mock('../database/noteRepository', () => ({
 
 const fs = require('fs');
 
-const repository = require('../database/noteRepository');
-const exportService = require('../services/exportService');
+const repository = Object.freeze(require('../database/noteRepository'));
+const exportService = Object.freeze(require('../services/exportService'));
 
 describe('exportNotes()', () => {
   const sampleNotes = [
@@ -47,7 +47,7 @@ describe('exportNotes()', () => {
 
     const files = fs.readdirSync(exportService.EXPORT_DIRECTORY);
 
-    expect(files.length).toBe(1);
+    expect(files).toHaveLength(1);
     expect(files[0]).toMatch(/^notes-.*\.json$/);
   });
 
@@ -84,6 +84,6 @@ describe('exportNotes()', () => {
 
     const files = fs.readdirSync(exportService.EXPORT_DIRECTORY);
 
-    expect(files.length).toBe(0);
+    expect(files).toHaveLength(0);
   });
 });

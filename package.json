@@ -29,12 +29,21 @@
   "license": "MIT",
   "type": "commonjs",
   "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
   "bin": {
     "notes": "index.js"
   },
+  "preferGlobal": true,
   "engines": {
     "node": ">=20"
   },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
   "files": [
     "commands/",
     "config/",
@@ -90,5 +99,9 @@
     "jest-mock": "^30.4.1",
     "lint-staged": "^16.4.0",
     "prettier": "^3.9.6"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Rudra070707"
   }
 }

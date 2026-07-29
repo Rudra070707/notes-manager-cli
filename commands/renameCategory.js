@@ -1,5 +1,7 @@
 const { renameCategory } = require('../services/noteService');
 
-module.exports = function (args) {
+function execute(args) {
   renameCategory(args[0], args[1]);
-};
+}
+
+module.exports = execute;

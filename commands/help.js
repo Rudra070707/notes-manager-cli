@@ -1,261 +1,360 @@
 function execute() {
   console.log(`
 ============================================================
-                📒 NOTES MANAGER CLI
+                📝 NOTES MANAGER CLI
+Professional Command Line Productivity Tool
 ============================================================
 
 USAGE
 ------------------------------------------------------------
-node index.js <command> [options]
+notes <command> [options]
 
+============================================================
+QUICK START
+============================================================
+
+Install globally
+
+  npm install -g notes-manager-cli
+
+Create your first note
+
+  notes add "Buy groceries"
+
+View all notes
+
+  notes list
+
+Mark a note complete
+
+  notes complete 1
+
+Need command help?
+
+  notes add --help
+
+Run
+
+  notes help
+
+Check version
+
+  notes --version
+============================================================
+MOST USED COMMANDS
+============================================================
+
+notes add
+notes list
+notes search
+notes complete
+notes today
+notes next
+notes report
+notes stats
 ============================================================
 BASIC COMMANDS
 ============================================================
 
 Add a note
-  node index.js add "Buy groceries"
+  notes add "Buy groceries"
 
 List all notes
-  node index.js list
+  notes list
 
 Update a note
-  node index.js update <id> "Updated note"
+  notes update 3 "Buy vegetables"
 
 Delete (Move to Trash)
-  node index.js delete <id>
+  notes delete 5
 
 Undo last operation
-  node index.js undo
+  notes undo
 
 ============================================================
 NOTE STATUS
 ============================================================
 
 Mark as completed
-  node index.js complete <id>
+  notes complete 4
 
 Mark as pending
-  node index.js uncomplete <id>
+  notes uncomplete 4
 
 ============================================================
 SEARCH
 ============================================================
 
 Search notes
-  node index.js search "keyword"
+
+  notes search Java
+
+or
+
+  notes search "Final Project"
+
 
 ============================================================
 ARCHIVE
 ============================================================
 
 Archive a note
-  node index.js archive <id>
+  notes archive 8
 
 Show archived notes
-  node index.js archived
+  notes archived
 
 Restore archived note
-  node index.js restore <id>
+  notes restore 8
 
 Delete all archived notes
-  node index.js clear-archived
+  notes clear-archived
 
 ============================================================
 TRASH
 ============================================================
 
 View Trash
-  node index.js trash
+  notes trash
 
 Restore from Trash
-  node index.js restore-trash <id>
+  notes restore-trash <id>
 
 Empty Trash
-  node index.js empty-trash
+  notes empty-trash
 
 ============================================================
 LOCK
 ============================================================
 
 Lock a note
-  node index.js lock <id>
+  notes lock 6
 
 Unlock a note
-  node index.js unlock <id>
+  notes unlock <id>
 
 ============================================================
 PIN
 ============================================================
 
 Pin a note
-  node index.js pin <id>
+  notes pin 2
 
 Unpin a note
-  node index.js unpin <id>
+  notes unpin <id>
 
 ============================================================
 FAVORITES
 ============================================================
 
 Add to favorites
-  node index.js favorite <id>
+  notes favorite <id>
 
 Remove from favorites
-  node index.js unfavorite <id>
+  notes unfavorite <id>
 
 Show favorite notes
-  node index.js favorites
+  notes favorites
 
 List only favorite notes
-  node index.js list --favorite
+  notes list --favorite
 
 ============================================================
 CATEGORIES
 ============================================================
 
 Assign category
-  node index.js category set <id> <category>
 
+  notes category set 5 College
 List categories
-  node index.js categories
+  notes categories
 
 Rename category
-  node index.js rename-category <old> <new>
+
+  notes rename-category Work Office
 
 Delete category
-  node index.js delete-category <category>
+
+  notes delete-category Personal
 
 ============================================================
 LIST FILTERS
 ============================================================
 
 List completed notes
-  node index.js list --completed
+  notes list --completed
 
 List pending notes
-  node index.js list --pending
+  notes list --pending
 
 Filter by priority
-  node index.js list --priority high
+  notes list --priority high
 
 Filter by tag
-  node index.js list --tag work
+  notes list --tag work
 
 Filter by category
-  node index.js list --category Personal
+  notes list --category Personal
 
 Due today
-  node index.js list --today
+  notes list --today
 
 Due this week
-  node index.js list --this-week
+  notes list --this-week
 
 Overdue notes
-  node index.js list --overdue
+  notes list --overdue
 
 Upcoming notes
-  node index.js list --upcoming
+  notes list --upcoming
 
 ============================================================
 SORTING
 ============================================================
 
 Sort by creation date
-  node index.js list --sort created
+  notes list --sort created
 
 Sort by priority
-  node index.js list --sort priority
+  notes list --sort priority
 
 Sort by status
-  node index.js list --sort status
+  notes list --sort status
 
 Sort by due date
-  node index.js list --sort due
+  notes list --sort due
 
 ============================================================
 ADD OPTIONS
 ============================================================
 
 Priority
-  node index.js add "Task" --priority high
+  notes add "Finish DBMS Assignment" --priority high
 
 Category
-  node index.js add "Task" --category Work
+  notes add "React Project" --category College
 
 Tags
-  node index.js add "Task" --tag work,office
+  notes add "Meeting" --tag office,client
 
 Due date
-  node index.js add "Task" --due 2026-12-31
+  notes add "Task" --due 2026-12-31
 
 Recurring (Daily)
-  node index.js add "Exercise" --daily
+  notes add "Exercise" --daily
 
 Recurring (Weekly)
-  node index.js add "Meeting" --weekly
+  notes add "Meeting" --weekly
 
 Recurring (Monthly)
-  node index.js add "Pay Rent" --monthly
+  notes add "Pay Rent" --monthly
 
 ============================================================
 IMPORT / EXPORT
 ============================================================
 
 Export JSON
-  node index.js export json
+  notes export json
 
 Export CSV
-  node index.js export csv
+  notes export csv
 
 Export Markdown
-  node index.js export md
+  notes export md
 
 Import JSON
-  node index.js import json notes.json
+  notes import json notes.json
+
+Import CSV
+  notes import csv notes.csv
+
+Import Markdown
+  notes import md notes.md
 
 ============================================================
 BACKUP
 ============================================================
 
 Create backup
-  node index.js backup
+  notes backup
 
 List backups
-  node index.js backups
+  notes backups
 
 Restore database
-  node index.js restore-db <backup-file>
+
+  notes restore-db backup-2026-07-28.db
 
 ============================================================
 CONFIGURATION
 ============================================================
 
 View configuration
-  node index.js config show
+  notes config show
 
 Set configuration
-  node index.js config set <key> <value>
+  notes config set <key> <value>
 
 ============================================================
 SECURITY
 ============================================================
 
-Security commands
-  node index.js security <action>
+Set master PIN
 
+  notes security set
+
+Verify PIN
+
+  notes security verify
+
+Check status
+
+  notes security status
+
+Remove PIN
+
+  notes security remove
 ============================================================
 STATISTICS
 ============================================================
 
 Show statistics
-  node index.js stats
+  notes stats
 
+============================================================
+UTILITY COMMANDS
+============================================================
+
+Today's notes
+  notes today
+
+Next upcoming task
+  notes next
+
+Recent notes
+  notes recent
+
+Overdue notes
+  notes overdue
+
+Project health check
+  notes doctor
 ============================================================
 HISTORY
 ============================================================
 
 Show activity history
-  node index.js history
+
+  notes history
+
+Today's activity
+
+  notes history --today
+
+Latest 20 actions
+
+  notes history --limit 20
+
 
 ============================================================
 ALIASES
@@ -274,14 +373,36 @@ HELP
 ============================================================
 
 Commander Help
-  node index.js --help
 
-Custom Help
-  node index.js help-custom
+  notes --help
+
+Detailed Guide
+
+  notes help
+
+Help for a specific command
+
+  notes add --help
+
+  notes search --help
+
+  notes config --help
 
 Version
-  node index.js --version
 
+  notes --version
+
+============================================================
+PROJECT
+============================================================
+
+GitHub
+
+  https://github.com/Rudra070707/notes-manager-cli
+
+NPM
+
+  https://www.npmjs.com/package/notes-manager-cli
 ============================================================
 `);
 }

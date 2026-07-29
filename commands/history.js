@@ -1,6 +1,6 @@
 const { showHistory, clearHistory } = require('../services/historyService');
 
-module.exports = (options = {}) => {
+function execute(options = {}) {
   if (options.clear) {
     clearHistory();
     return;
@@ -12,4 +12,6 @@ module.exports = (options = {}) => {
     search: options.search,
     today: options.today,
   });
-};
+}
+
+module.exports = execute;

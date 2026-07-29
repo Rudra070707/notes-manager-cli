@@ -1,9 +1,13 @@
 function validateRecurrence(recurrence) {
-  if (!recurrence) return null;
+  if (!recurrence) {
+    return null;
+  }
 
-  if (typeof recurrence !== 'string') return null;
+  if (typeof recurrence !== 'string') {
+    return null;
+  }
 
-  const value = recurrence.toLowerCase();
+  const value = recurrence.trim().toLowerCase();
 
   const allowed = ['daily', 'weekly', 'monthly'];
 
@@ -14,6 +18,6 @@ function validateRecurrence(recurrence) {
   return value;
 }
 
-module.exports = {
+module.exports = Object.freeze({
   validateRecurrence,
-};
+});

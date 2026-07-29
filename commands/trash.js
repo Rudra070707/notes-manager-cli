@@ -1,5 +1,7 @@
 const { listTrashedNotes } = require('../services/noteService');
 
-module.exports = () => {
+function execute() {
   listTrashedNotes();
-};
+}
+
+module.exports = execute;

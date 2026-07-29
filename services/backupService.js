@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const ui = require('../ui/colors');
 const logger = require('./loggerService');
@@ -103,7 +103,7 @@ function restoreBackup(backupName) {
   });
 }
 
-module.exports = {
+module.exports = Object.freeze({
   databasePath,
   backupDirectory,
   ensureBackupDirectory,
@@ -111,4 +111,4 @@ module.exports = {
   createBackup,
   listBackups,
   restoreBackup,
-};
+});

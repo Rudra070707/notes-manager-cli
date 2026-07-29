@@ -1,5 +1,19 @@
 const Table = require('cli-table3');
 
+const TABLE_HEADERS = Object.freeze([
+  'ID',
+  '★',
+  'Status',
+  'Priority',
+  'Category',
+  'Due',
+  'Repeat',
+  'Tags',
+  'Note',
+]);
+
+const TABLE_WIDTHS = Object.freeze([5, 3, 12, 10, 15, 18, 10, 18, 40]);
+
 function getRelativeDueDate(dueDate) {
   if (!dueDate) {
     return '-';
@@ -41,25 +55,13 @@ function truncate(text, maxLength) {
     return '';
   }
 
-  return text.length > maxLength
-    ? `${text.substring(0, maxLength - 3)}...`
-    : text;
+  return text.length > maxLength ? `${text.slice(0, maxLength - 3)}...` : text;
 }
 
 function printNotes(notes) {
   const table = new Table({
-    head: [
-      'ID',
-      '★',
-      'Status',
-      'Priority',
-      'Category',
-      'Due',
-      'Repeat',
-      'Tags',
-      'Note',
-    ],
-    colWidths: [5, 3, 12, 10, 15, 18, 10, 18, 40],
+    head: TABLE_HEADERS,
+    colWidths: TABLE_WIDTHS,
     wordWrap: true,
     style: {
       head: ['cyan'],
@@ -103,6 +105,6 @@ function printNotes(notes) {
   console.log(table.toString());
 }
 
-module.exports = {
+module.exports = Object.freeze({
   printNotes,
-};
+});

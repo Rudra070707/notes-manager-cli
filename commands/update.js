@@ -1,7 +1,14 @@
 const noteService = require('../services/noteService');
 
 function execute(args) {
-  noteService.updateNote(args[0], args.slice(1).join(' '));
+  const [id, ...textParts] = args;
+
+  if (!id || textParts.length === 0) {
+    console.error('Usage: notes update <id> <new text>');
+    return;
+  }
+
+  noteService.updateNote(id, textParts.join(' '));
 }
 
 module.exports = execute;

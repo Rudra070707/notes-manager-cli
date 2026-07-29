@@ -12,13 +12,20 @@ id = 1
 */
 
 function initializeSecurityTable() {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS security (
-      id INTEGER PRIMARY KEY CHECK(id = 1),
-      password_hash TEXT NOT NULL,
-      created_at TEXT NOT NULL
-    )
-  `);
+  db.run(
+    `
+      CREATE TABLE IF NOT EXISTS security (
+        id INTEGER PRIMARY KEY CHECK(id = 1),
+        password_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    `,
+    (error) => {
+      if (error) {
+        console.error('Failed to initialize security table:', error);
+      }
+    }
+  );
 }
 
 initializeSecurityTable();

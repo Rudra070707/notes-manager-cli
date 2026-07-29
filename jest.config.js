@@ -15,5 +15,15 @@ module.exports = {
 
   coverageDirectory: 'coverage',
 
+  coverageProvider: 'v8',
+
+  coveragePathIgnorePatterns: ['/node_modules/', '/coverage/'],
+
+  testPathIgnorePatterns: ['/node_modules/', '/coverage/'],
+
   clearMocks: true,
+
+  resetMocks: true,
+
+  restoreMocks: true,
 };

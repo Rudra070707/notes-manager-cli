@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const repository = require('../database/noteRepository');
 
@@ -25,7 +25,7 @@ function createTimestamp() {
 }
 
 function getExporter(format) {
-  switch (format.toLowerCase()) {
+  switch (String(format).toLowerCase()) {
     case 'json':
       return {
         extension: 'json',
@@ -61,18 +61,18 @@ function exportCsv(notes, filePath) {
 
   const header = 'id,text,priority,tags,dueDate,recurrence,completed,createdAt';
 
-  const rows = notes.map((note) => {
-    return [
+  const rows = notes.map((note) =>
+    [
       note.id,
-      `"${String(note.text).replace(/"/g, '""')}"`,
+      `"${String(note.text).replaceAll('"', '""')}"`,
       note.priority,
-      `"${note.tags.join(';')}"`,
+      `"${(note.tags || []).join(';')}"`,
       note.dueDate || '',
       note.recurrence || '',
       note.completed,
       note.createdAt,
-    ].join(',');
-  });
+    ].join(',')
+  );
 
   fs.writeFileSync(filePath, [header, ...rows].join('\n'), 'utf8');
 }
@@ -89,7 +89,7 @@ function exportMarkdown(notes, filePath) {
     output += `- Completed: ${note.completed}\n`;
     output += `- Due Date: ${note.dueDate || '-'}\n`;
     output += `- Recurrence: ${note.recurrence || '-'}\n`;
-    output += `- Tags: ${note.tags.join(', ') || '-'}\n`;
+    output += `- Tags: ${(note.tags || []).join(', ') || '-'}\n`;
     output += `- Created: ${note.createdAt}\n\n`;
   });
 
@@ -105,7 +105,7 @@ function exportNotes(format) {
       return;
     }
 
-    const exportConfig = module.exports.getExporter(format);
+    const exportConfig = getExporter(format);
 
     if (!exportConfig) {
       console.log('Unsupported export format.');
@@ -113,7 +113,6 @@ function exportNotes(format) {
     }
 
     const timestamp = createTimestamp();
-
     const filename = `notes-${timestamp}.${exportConfig.extension}`;
     const filePath = path.join(EXPORT_DIRECTORY, filename);
 

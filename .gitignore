@@ -1,7 +1,47 @@
-node_modules
-coverage
+# ==========================
+# Dependencies
+# ==========================
+node_modules/
+
+# ==========================
+# Test Coverage
+# ==========================
+coverage/
+
+# ==========================
+# Exported Files
+# ==========================
 exports/*
 !exports/.gitkeep
+
+# ==========================
+# Database
+# ==========================
 data/notes.db
+data/test-notes.db
+
+# ==========================
+# Logs
+# ==========================
 logs/
 *.log
+
+# ==========================
+# Environment Variables
+# ==========================
+.env
+.env.*
+!.env.example
+
+# ==========================
+# Operating System
+# ==========================
+.DS_Store
+Thumbs.db
+
+# ==========================
+# IDE
+# ==========================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json

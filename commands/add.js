@@ -1,6 +1,6 @@
 const { addNote } = require('../services/noteService');
 
-module.exports = function (args, options = {}) {
+function execute(args, options = {}) {
   let recurrence = null;
 
   if (options.daily) {
@@ -19,4 +19,6 @@ module.exports = function (args, options = {}) {
     recurrence,
     options.category
   );
-};
+}
+
+module.exports = execute;

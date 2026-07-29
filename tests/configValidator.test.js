@@ -1,4 +1,4 @@
-const validator = require('../services/configValidator');
+const validator = Object.freeze(require('../services/configValidator'));
 
 describe('Configuration Validator', () => {
   test('should accept valid priority', () => {

@@ -1,7 +1,9 @@
-const fs = require('fs');
+const fs = require('node:fs');
 
 const repository = require('../database/configRepository');
 const defaultConfig = require('../config/defaultConfig');
+
+const UPDATED_PRIORITY = 'high';
 
 describe('Config Service', () => {
   beforeEach(() => {
@@ -21,19 +23,19 @@ describe('Config Service', () => {
   test('should update configuration', () => {
     const config = repository.getConfig();
 
-    config.defaultPriority = 'high';
+    config.defaultPriority = UPDATED_PRIORITY;
 
     repository.saveConfig(config);
 
     const updated = repository.getConfig();
 
-    expect(updated.defaultPriority).toBe('high');
+    expect(updated.defaultPriority).toBe(UPDATED_PRIORITY);
   });
 
   test('should reset configuration', () => {
     const config = repository.getConfig();
 
-    config.defaultPriority = 'high';
+    config.defaultPriority = UPDATED_PRIORITY;
 
     repository.saveConfig(config);
 

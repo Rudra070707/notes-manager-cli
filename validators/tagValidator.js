@@ -1,5 +1,5 @@
 function validateTag(tag) {
-  if (!tag) {
+  if (tag === null || tag === undefined) {
     return [];
   }
 
@@ -15,6 +15,6 @@ function validateTag(tag) {
   return [...new Set(tags)];
 }
 
-module.exports = {
+module.exports = Object.freeze({
   validateTag,
-};
+});

@@ -1,9 +1,11 @@
-function filterNotes(notes, options = {}) {
+function filterNotes(notes = [], options = {}) {
   let filtered = [...notes];
 
   if (options.priority) {
+    const priority = options.priority.toLowerCase();
+
     filtered = filtered.filter(
-      (note) => (note.priority || 'medium') === options.priority.toLowerCase()
+      (note) => (note.priority || 'medium') === priority
     );
   }
 
@@ -12,6 +14,7 @@ function filterNotes(notes, options = {}) {
 
     filtered = filtered.filter((note) => (note.tags || []).includes(tag));
   }
+
   if (options.category) {
     const category = options.category.toLowerCase();
 
@@ -19,6 +22,7 @@ function filterNotes(notes, options = {}) {
       (note) => (note.category || 'General').toLowerCase() === category
     );
   }
+
   if (options.favorite) {
     filtered = filtered.filter((note) => note.is_favorite);
   }
@@ -30,6 +34,7 @@ function filterNotes(notes, options = {}) {
   if (options.pinned) {
     filtered = filtered.filter((note) => note.is_pinned);
   }
+
   if (options.completed) {
     filtered = filtered.filter((note) => note.completed);
   }
@@ -43,7 +48,9 @@ function filterNotes(notes, options = {}) {
 
   if (options.today) {
     filtered = filtered.filter((note) => {
-      if (!note.dueDate) return false;
+      if (!note.dueDate) {
+        return false;
+      }
 
       const due = new Date(note.dueDate);
       due.setHours(0, 0, 0, 0);
@@ -54,7 +61,9 @@ function filterNotes(notes, options = {}) {
 
   if (options.overdue) {
     filtered = filtered.filter((note) => {
-      if (!note.dueDate) return false;
+      if (!note.dueDate) {
+        return false;
+      }
 
       const due = new Date(note.dueDate);
       due.setHours(0, 0, 0, 0);
@@ -65,7 +74,9 @@ function filterNotes(notes, options = {}) {
 
   if (options.upcoming) {
     filtered = filtered.filter((note) => {
-      if (!note.dueDate) return false;
+      if (!note.dueDate) {
+        return false;
+      }
 
       const due = new Date(note.dueDate);
       due.setHours(0, 0, 0, 0);
@@ -79,7 +90,9 @@ function filterNotes(notes, options = {}) {
     endOfWeek.setDate(today.getDate() + 7);
 
     filtered = filtered.filter((note) => {
-      if (!note.dueDate) return false;
+      if (!note.dueDate) {
+        return false;
+      }
 
       const due = new Date(note.dueDate);
       due.setHours(0, 0, 0, 0);

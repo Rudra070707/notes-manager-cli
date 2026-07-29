@@ -10,6 +10,6 @@ function validateText(text) {
   return true;
 }
 
-module.exports = {
+module.exports = Object.freeze({
   validateText,
-};
+});

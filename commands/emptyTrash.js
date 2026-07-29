@@ -1,5 +1,7 @@
 const { emptyTrashBin } = require('../services/noteService');
 
-module.exports = () => {
+function execute() {
   emptyTrashBin();
-};
+}
+
+module.exports = execute;

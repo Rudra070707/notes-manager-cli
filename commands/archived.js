@@ -1,5 +1,7 @@
 const { listArchivedNotes } = require('../services/noteService');
 
-module.exports = function () {
+function execute() {
   listArchivedNotes();
-};
+}
+
+module.exports = execute;

@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const logsDirectory = path.join(__dirname, '..', 'logs');
 const logFile = path.join(logsDirectory, 'notes.log');
@@ -21,12 +21,13 @@ function getTimestamp() {
 function log(action, message) {
   ensureLogDirectory();
 
-  const logEntry = `[${getTimestamp()}] ${action.toUpperCase()} | ${message}\n`;
+  const actionName = String(action).toUpperCase();
+  const logEntry = `[${getTimestamp()}] ${actionName} | ${message}\n`;
 
   try {
     fs.appendFileSync(logFile, logEntry, 'utf8');
-  } catch (err) {
-    console.error('Failed to write log:', err.message);
+  } catch (error) {
+    console.error('Failed to write log:', error.message);
   }
 }
 
