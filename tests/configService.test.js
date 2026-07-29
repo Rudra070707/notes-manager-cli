@@ -1,4 +1,4 @@
-const fs = require('node:fs');
+const fs = require('fs');
 
 const repository = require('../database/configRepository');
 const defaultConfig = require('../config/defaultConfig');
